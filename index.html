@@ -103,7 +103,8 @@ input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgb
 .legend-dot  { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid var(--border2); }
 .l-we     { background: var(--we-bg); }
 .l-ferie  { background: var(--ferie-bg); }
-.l-grey   { background: var(--grey-day-bg); }
+.l-grey           { background: var(--grey-day-bg); }
+.l-ferie-unlocked { background: #EAF5EE; border-color: var(--green-mid); }
 
 /* ── TABLE ── */
 .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 20px; }
@@ -166,7 +167,14 @@ td.dc { padding: 3px 2px; text-align: center; vertical-align: middle; }
 td.dc.we        { background: var(--we-bg); }
 td.dc.ferie     { background: var(--ferie-bg); }
 td.dc.grey-day  { background: var(--grey-day-bg); }
-td.dc.ferie    select.cs { opacity: 0.3; pointer-events: none; }
+th.day-th.ferie-unlocked-col     { background: #EAF5EE; }
+th.day-th.ferie-unlocked-col:hover { background: #D4ECDB; }
+th.day-th.ferie-unlocked-col .day-name,
+th.day-th.ferie-unlocked-col .day-num { color: var(--green); opacity: 0.9; }
+th.day-th.ferie-unlocked-col .ferie-label { color: var(--green); }
+
+td.dc.ferie-unlocked { background: #EAF5EE; }
+td.dc.ferie-unlocked select.cs { opacity: 1; pointer-events: auto; }
 td.dc.grey-day select.cs { opacity: 0.3; pointer-events: none; }
 
 select.cs {
@@ -268,9 +276,10 @@ td.tc.amb  { color: var(--amber); }
 
   <!-- Légende -->
   <div class="legend">
-    <span class="legend-note">Cliquer sur un numéro de jour pour le grisér / dé-grisér manuellement</span>
+    <span class="legend-note">Cliquer sur un numéro de jour pour le grisér / dé-grisér · cliquer sur un férié pour le marquer travaillé</span>
     <span class="legend-item"><span class="legend-dot l-we"></span> Week-end</span>
-    <span class="legend-item"><span class="legend-dot l-ferie"></span> Jour férié (automatique)</span>
+    <span class="legend-item"><span class="legend-dot l-ferie"></span> Jour férié</span>
+    <span class="legend-item"><span class="legend-dot l-ferie-unlocked"></span> Férié travaillé</span>
     <span class="legend-item"><span class="legend-dot l-grey"></span> Jour grisé manuellement</span>
   </div>
 
@@ -298,7 +307,8 @@ let year  = new Date().getFullYear();
 let month = new Date().getMonth();
 let activities = [];
 let data = {};
-let greyedDays = {}; // "year|month" → Set<number>  (jours grisés MANUELLEMENT)
+let greyedDays    = {}; // "year|month" → Set<number>  (jours grisés MANUELLEMENT)
+let unlockedFeries = {}; // "year|month" → Set<number>  (fériés déverrouillés = travaillés)
 
 // ── JOURS FÉRIÉS FRANÇAIS ─────────────────────────────────────────────────
 // Algorithme de Meeus/Jones/Butcher pour Pâques
@@ -380,14 +390,28 @@ function isFerie(y, m, d) {
 
 // ── ÉTAT ──────────────────────────────────────────────────────────────────
 function greyKey() { return `${year}|${month}`; }
-function getGreyed() { return greyedDays[greyKey()] || new Set(); }
-function isManualGrey(d) { return getGreyed().has(d); }
-function toggleGrey(d) {
-  // Ne pas griser manuellement les WE (déjà grisés) — on peut tout de même les basculer
-  const k = greyKey();
-  if (!greyedDays[k]) greyedDays[k] = new Set();
-  if (greyedDays[k].has(d)) greyedDays[k].delete(d);
-  else greyedDays[k].add(d);
+function getGreyed()    { return greyedDays[greyKey()]     || new Set(); }
+function getUnlocked()  { return unlockedFeries[greyKey()] || new Set(); }
+function isManualGrey(d)   { return getGreyed().has(d); }
+function isFerieUnlocked(d){ return getUnlocked().has(d); }
+
+// Clic sur un jour :
+//  - jour férié non déverrouillé → déverrouille (travaillé)
+//  - jour férié déverrouillé     → re-verrouille
+//  - jour normal ou WE           → bascule grisage manuel
+function toggleDay(d) {
+  const gk = greyKey();
+  if (isFerie(year, month, d) && !isManualGrey(d)) {
+    // Basculer déverrouillage du férié
+    if (!unlockedFeries[gk]) unlockedFeries[gk] = new Set();
+    if (unlockedFeries[gk].has(d)) unlockedFeries[gk].delete(d);
+    else unlockedFeries[gk].add(d);
+  } else {
+    // Basculer grisage manuel (jours normaux, WE, ou férié déjà grisé manuellement)
+    if (!greyedDays[gk]) greyedDays[gk] = new Set();
+    if (greyedDays[gk].has(d)) greyedDays[gk].delete(d);
+    else greyedDays[gk].add(d);
+  }
   render();
 }
 
@@ -401,36 +425,41 @@ function set(row, col, val) {
   updateSummary();
 }
 
-// Priorité : grisé manuel > férié > WE
+// Priorité : grisé manuel > férié (sauf si déverrouillé) > WE
 function dayStatus(d) {
-  if (isManualGrey(d))       return 'grey';
-  if (isFerie(year, month, d)) return 'ferie';
-  if (isWE(d))               return 'we';
+  if (isManualGrey(d))                                    return 'grey';
+  if (isFerie(year, month, d) && !isFerieUnlocked(d))    return 'ferie';
+  if (isWE(d))                                            return 'we';
+  if (isFerie(year, month, d) && isFerieUnlocked(d))     return 'ferie-unlocked';
   return 'normal';
 }
 // Classe CSS de cellule corps
 function cellClass(d) {
   const s = dayStatus(d);
-  if (s === 'grey')  return 'grey-day';
-  if (s === 'ferie') return 'ferie';
-  if (s === 'we')    return 'we';
+  if (s === 'grey')            return 'grey-day';
+  if (s === 'ferie')           return 'ferie';
+  if (s === 'we')              return 'we';
+  if (s === 'ferie-unlocked')  return 'ferie-unlocked';
   return '';
 }
 // Classe CSS d'en-tête
 function thClass(d) {
   const s = dayStatus(d);
-  if (s === 'grey')  return 'grey-col';
-  if (s === 'ferie') return 'ferie-col';
-  if (s === 'we')    return 'we-col';
+  if (s === 'grey')            return 'grey-col';
+  if (s === 'ferie')           return 'ferie-col';
+  if (s === 'we')              return 'we-col';
+  if (s === 'ferie-unlocked')  return 'ferie-unlocked-col';
   return '';
 }
-// Est-ce que le jour compte comme "non ouvré" dans les stats ?
+// Est-ce que le jour est non ouvré (exclu des stats) ?
 function isNonOuvre(d) {
-  return isWE(d) || isFerie(year, month, d) || isManualGrey(d);
+  const s = dayStatus(d);
+  return s === 'we' || s === 'ferie' || s === 'grey';
 }
 // Est-ce que la saisie est désactivée ?
 function isDisabled(d) {
-  return dayStatus(d) !== 'normal';
+  const s = dayStatus(d);
+  return s === 'we' || s === 'ferie' || s === 'grey';
 }
 
 // ── HELPERS UI ─────────────────────────────────────────────────────────────
@@ -506,7 +535,10 @@ function render() {
     const dow  = DAYS[new Date(year, month, d).getDay()];
     const thCls_ = thClass(d);
     const fName = isFerie(year, month, d) ? getFerieName(year, month, d) : '';
-    h += `<th class="day-th ${thCls_}" onclick="toggleGrey(${d})" title="${fName || 'Clic : grisér / dé-grisér'}">`
+    const tipFerie = isFerie(year, month, d) && !isManualGrey(d)
+      ? (isFerieUnlocked(d) ? `${fName} — Clic : re-griser` : `${fName} — Clic : marquer comme travaillé`)
+      : 'Clic : grisér / dé-grisér';
+    h += `<th class="day-th ${thCls_}" onclick="toggleDay(${d})" title="${tipFerie}">`
        + `<div class="day-head">`
        + `<span class="day-name">${dow}</span>`
        + `<span class="day-num">${d}</span>`
@@ -580,8 +612,8 @@ function updateSummary() {
   let worked = 0, conge = 0, rtt = 0, ouvres = 0, nbFeries = 0;
   for (let d = 1; d <= days; d++) {
     if (!isWE(d)) {
-      if (isFerie(year, month, d)) nbFeries++;
-      else if (!isManualGrey(d))   ouvres++;
+      if (isFerie(year, month, d) && !isFerieUnlocked(d)) nbFeries++;
+      else if (!isManualGrey(d)) ouvres++;
     }
     const c = get('conge', d); if(c==='1') conge+=1; else if(c==='0.5') conge+=0.5;
     const r = get('rtt', d);   if(r==='1') rtt+=1;   else if(r==='0.5') rtt+=0.5;
@@ -631,57 +663,278 @@ function updateSummary() {
   `;
 }
 
-// ── EXPORT EXCEL ───────────────────────────────────────────────────────────
+// ── EXPORT EXCEL (mise en forme complète) ──────────────────────────────────
 function exportExcel() {
   const days    = daysInM(year, month);
   const societe = document.getElementById('societeInput').value.trim() || 'Société';
   const name    = document.getElementById('collabInput').value.trim()  || 'Collaborateur';
-  const wb = XLSX.utils.book_new();
-  const rows = [];
 
-  rows.push([`CRA — ${societe} — ${name} — ${MONTHS[month]} ${year}`]);
-  // Ligne 2 : jours grisés manuels (les fériés sont recalculés à l'import)
-  const greyArr = [...getGreyed()].sort((a,b)=>a-b);
-  rows.push([greyArr.length ? `GREY:${greyArr.join(',')}` : '']);
-
-  const hRow = ['Activité / Jour'];
+  // Calcul des stats (même logique que updateSummary)
+  let worked = 0, conge = 0, rtt = 0, ouvres = 0, nbFeries = 0;
   for (let d = 1; d <= days; d++) {
-    const s = dayStatus(d);
-    hRow.push(s === 'we' ? `(${d})` : s === 'ferie' ? `{${d}}` : s === 'grey' ? `[${d}]` : `${d}`);
+    if (!isWE(d)) {
+      if (isFerie(year, month, d) && !isFerieUnlocked(d)) nbFeries++;
+      else if (!isManualGrey(d)) ouvres++;
+    }
+    const c = get('conge', d); if(c==='1') conge+=1; else if(c==='0.5') conge+=0.5;
+    const r = get('rtt', d);   if(r==='1') rtt+=1;   else if(r==='0.5') rtt+=0.5;
+    let s = 0;
+    activities.forEach((_, i) => { const v = get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    worked += s;
   }
-  hRow.push('Total');
-  rows.push(hRow);
+  const totalImpute = worked + conge + rtt;
 
-  activities.forEach((act, i) => {
-    const row = [act]; let tot = 0;
-    for (let d = 1; d <= days; d++) {
-      const v = get(i,d); const n = v==='1'?1:v==='0.5'?0.5:null;
-      if (n) tot += n; row.push(n ?? '');
+  // ── Palettes de couleurs (ARGB hex pour SheetJS) ──
+  const C = {
+    white:       'FFFFFFFF',
+    bgPage:      'FFF7F6F3',
+    bgSurface2:  'FFF0EEE9',
+    bgWE:        'FFEDEBE5',
+    bgFerie:     'FFDFE0DC',
+    bgGrey:      'FFD4D5D1',
+    bgFerieUnlk: 'FFEAF5EE',
+    bgGreen:     'FFE8F5EE',
+    bgBlue:      'FFE6F0F8',
+    bgAmber:     'FFFBF0DC',
+    bgRed:       'FFFBEAEA',
+    bgTotRow:    'FFF0EEE9',
+    bgTitleRow:  'FF1D6B4E',   // vert foncé pour titre
+    bgHeaderDay: 'FFF0EEE9',
+    txtWhite:    'FFFFFFFF',
+    txtDark:     'FF1A1917',
+    txtMuted:    'FF6B6760',
+    txtLight:    'FFA5A29C',
+    txtGreen:    'FF1D6B4E',
+    txtBlue:     'FF1A4F7A',
+    txtAmber:    'FF7A4A0E',
+    txtRed:      'FF8B2020',
+    borderColor: 'FFE2DED7',
+  };
+
+  // Helper : crée un style de cellule SheetJS
+  function sty(opts = {}) {
+    const s = {};
+    if (opts.bg)   s.fill = { patternType: 'solid', fgColor: { rgb: opts.bg } };
+    if (opts.bold || opts.color || opts.sz || opts.italic) {
+      s.font = {};
+      if (opts.bold)   s.font.bold = true;
+      if (opts.italic) s.font.italic = true;
+      if (opts.color)  s.font.color = { rgb: opts.color };
+      if (opts.sz)     s.font.sz = opts.sz;
+      if (opts.name)   s.font.name = opts.name;
     }
-    row.push(tot || ''); rows.push(row);
-  });
-  rows.push([]);
-  ['conge','rtt'].forEach(type => {
-    const row = [type==='conge'?'Congés payés':'RTT']; let tot = 0;
-    for (let d = 1; d <= days; d++) {
-      const v = get(type,d); const n = v==='1'?1:v==='0.5'?0.5:null;
-      if (n) tot += n; row.push(n ?? '');
+    if (opts.center) s.alignment = { horizontal: 'center', vertical: 'center', wrapText: !!opts.wrap };
+    if (opts.left)   s.alignment = { horizontal: 'left',   vertical: 'center', wrapText: !!opts.wrap };
+    if (opts.right)  s.alignment = { horizontal: 'right',  vertical: 'center' };
+    if (opts.border) {
+      const b = { style: 'thin', color: { rgb: C.borderColor } };
+      s.border = { top: b, bottom: b, left: b, right: b };
     }
-    row.push(tot || ''); rows.push(row);
-  });
-  const tRow = ['Total / jour']; let grand = 0;
+    return s;
+  }
+
+  // Helper : encode une cellule
+  function cell(v, style) {
+    const t = typeof v === 'number' ? 'n' : 's';
+    const c = { v, t, s: style };
+    if (t === 'n' && style && style.numFmt) c.z = style.numFmt;
+    return c;
+  }
+  function numCell(v, style) { return { v, t: 'n', s: style }; }
+  function emptyCell(style)  { return { v: '', t: 's', s: style }; }
+
+  // ── Construction de la feuille ──
+  const wb = XLSX.utils.book_new();
+  const ws = {};
+  let curRow = 0; // index ligne (0-based)
+
+  const totalCols = 1 + days + 1; // label + jours + total
+  const lastCol   = totalCols - 1;
+
+  // Encode "A1" style depuis row/col (0-based)
+  function addr(r, c) {
+    let col = '';
+    let n = c + 1;
+    while (n > 0) { col = String.fromCharCode(65 + ((n-1) % 26)) + col; n = Math.floor((n-1) / 26); }
+    return col + (r + 1);
+  }
+
+  function setCell(r, c, cellObj) { ws[addr(r, c)] = cellObj; }
+
+  // ── LIGNE 1 : Titre ──────────────────────────────────────────────────────
+  setCell(curRow, 0, cell(`CRA — ${societe} — ${name} — ${MONTHS[month]} ${year}`,
+    sty({ bg: C.bgTitleRow, bold: true, color: C.txtWhite, sz: 13, left: true, border: false })));
+  for (let c = 1; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgTitleRow })));
+  ws['!merges'] = ws['!merges'] || [];
+  ws['!merges'].push({ s: {r: curRow, c: 0}, e: {r: curRow, c: lastCol} });
+  curRow++;
+
+  // ── LIGNE 2 : Métadonnées (cachée mais lisible pour import) ───────────────
+  const greyArr   = [...getGreyed()].sort((a,b)=>a-b);
+  const unlockArr = [...getUnlocked()].sort((a,b)=>a-b);
+  const meta = [greyArr.length ? `GREY:${greyArr.join(',')}` : '', unlockArr.length ? `UNLOCK:${unlockArr.join(',')}` : ''].filter(Boolean).join('|');
+  setCell(curRow, 0, cell(meta || '', sty({ color: C.bgPage, bg: C.bgPage })));
+  for (let c = 1; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgPage })));
+  curRow++;
+
+  // ── LIGNE 3 : En-têtes jours ──────────────────────────────────────────────
+  // Colonne label
+  setCell(curRow, 0, cell('Activité / Jour',
+    sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
+
   for (let d = 1; d <= days; d++) {
+    const st  = dayStatus(d);
+    const dow = DAYS[new Date(year, month, d).getDay()].toUpperCase();
+    const fName = isFerie(year, month, d) ? getFerieName(year, month, d) : '';
+    const bg  = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.bgSurface2;
+    const col = (st==='we'||st==='ferie'||st==='grey') ? C.txtLight : C.txtMuted;
+    // On met le jour + nom du jour + nom du férié dans la cellule (multiligne)
+    const txt = fName ? `${d}\n${dow}\n${fName}` : `${d}\n${dow}`;
+    setCell(curRow, d, { v: txt, t: 's', s: { ...sty({ bg, bold: true, color: col, sz: 8, center: true, border: true, wrap: true }) } });
+  }
+  // Colonne Total
+  setCell(curRow, lastCol, cell('Total', sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, center: true, border: true })));
+  curRow++;
+
+  // ── LIGNES ACTIVITÉS ─────────────────────────────────────────────────────
+  const rowBgAlt = ['FFFFFFFF', 'FFFAFAF8'];
+  activities.forEach((act, i) => {
+    const rowBg = rowBgAlt[i % 2];
+    setCell(curRow, 0, cell(act, sty({ bg: rowBg, bold: true, color: C.txtDark, sz: 10, left: true, border: true })));
+    let tot = 0;
+    for (let d = 1; d <= days; d++) {
+      const st = dayStatus(d);
+      const v  = get(i, d);
+      const n  = v==='1'?1:v==='0.5'?0.5:null;
+      if (n) tot += n;
+      const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : rowBg;
+      let cellBg = bg, cellColor = C.txtMuted;
+      if (n === 1)   { cellBg = C.bgGreen; cellColor = C.txtGreen; }
+      if (n === 0.5) { cellBg = C.bgBlue;  cellColor = C.txtBlue;  }
+      const cval = n !== null ? { v: n, t: 'n', s: sty({ bg: cellBg, bold: !!n, color: cellColor, center: true, border: true }) }
+                              : emptyCell(sty({ bg, border: true, center: true }));
+      setCell(curRow, d, cval);
+    }
+    const totStyle = sty({ bg: tot>0?C.bgGreen:rowBg, bold: true, color: tot>0?C.txtGreen:C.txtMuted, center: true, border: true });
+    setCell(curRow, lastCol, tot > 0 ? { v: tot, t: 'n', s: totStyle } : emptyCell(totStyle));
+    curRow++;
+  });
+
+  // ── LIGNE SÉPARATEUR ─────────────────────────────────────────────────────
+  for (let c = 0; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgSurface2, border: true })));
+  curRow++;
+
+  // ── LIGNES CONGÉS + RTT ──────────────────────────────────────────────────
+  const specialRows = [
+    { key:'conge', label:'Congés payés', valBg: C.bgGreen, valColor: C.txtGreen },
+    { key:'rtt',   label:'RTT',          valBg: C.bgBlue,  valColor: C.txtBlue  },
+  ];
+  specialRows.forEach(({ key, label, valBg, valColor }) => {
+    setCell(curRow, 0, cell(label, sty({ bg: C.white, bold: true, color: valColor, sz: 10, left: true, border: true })));
+    let tot = 0;
+    for (let d = 1; d <= days; d++) {
+      const st = dayStatus(d);
+      const v  = get(key, d);
+      const n  = v==='1'?1:v==='0.5'?0.5:null;
+      if (n) tot += n;
+      const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.white;
+      const cval = n !== null ? { v: n, t: 'n', s: sty({ bg: valBg, bold: true, color: valColor, center: true, border: true }) }
+                              : emptyCell(sty({ bg, border: true, center: true }));
+      setCell(curRow, d, cval);
+    }
+    const totStyle = sty({ bg: tot>0?valBg:C.white, bold: true, color: tot>0?valColor:C.txtMuted, center: true, border: true });
+    setCell(curRow, lastCol, tot > 0 ? { v: tot, t: 'n', s: totStyle } : emptyCell(totStyle));
+    curRow++;
+  });
+
+  // ── LIGNE TOTAL / JOUR ───────────────────────────────────────────────────
+  setCell(curRow, 0, cell('Total / jour', sty({ bg: C.bgTotRow, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
+  let grand = 0;
+  for (let d = 1; d <= days; d++) {
+    const st = dayStatus(d);
     let s = 0;
     activities.forEach((_,i) => { const v=get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
     ['conge','rtt'].forEach(r => { const v=get(r,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
-    grand += s; tRow.push(s || '');
+    grand += s;
+    const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.bgTotRow;
+    const overColor = s > 1 ? C.txtRed : s === 1 ? C.txtGreen : C.txtLight;
+    const overBg    = s > 1 ? C.bgRed  : s === 1 ? C.bgGreen  : bg;
+    setCell(curRow, d, s > 0
+      ? { v: s, t: 'n', s: sty({ bg: overBg, bold: true, color: overColor, center: true, border: true }) }
+      : emptyCell(sty({ bg, border: true, center: true })));
   }
-  tRow.push(grand || ''); rows.push(tRow);
+  const totTotStyle = sty({ bg: C.bgTotRow, bold: true, color: C.txtDark, center: true, border: true });
+  setCell(curRow, lastCol, grand > 0 ? { v: grand, t: 'n', s: totTotStyle } : emptyCell(totTotStyle));
+  curRow++;
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:28}, ...Array(days).fill({wch:5}), {wch:7}];
+  // ── ESPACE ───────────────────────────────────────────────────────────────
+  curRow += 2;
+
+  // ── BLOC INDICATEURS ─────────────────────────────────────────────────────
+  // Titre bloc
+  setCell(curRow, 0, cell('Indicateurs du mois', sty({ bg: C.bgTitleRow, bold: true, color: C.txtWhite, sz: 11, left: true })));
+  for (let c = 1; c <= 5; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgTitleRow })));
+  ws['!merges'].push({ s: {r: curRow, c: 0}, e: {r: curRow, c: 5} });
+  curRow++;
+
+  const diffVal  = totalImpute - ouvres;
+  const diffColor = diffVal > 0.05 ? C.txtRed : diffVal < -0.05 ? C.txtAmber : C.txtGreen;
+  const diffBg    = diffVal > 0.05 ? C.bgRed  : diffVal < -0.05 ? C.bgAmber  : C.bgGreen;
+
+  const indicators = [
+    { label: 'Société',          value: societe,      isNum: false, color: C.txtDark,  bg: C.white    },
+    { label: 'Collaborateur',    value: name,         isNum: false, color: C.txtDark,  bg: C.white    },
+    { label: 'Période',          value: `${MONTHS[month]} ${year}`, isNum: false, color: C.txtMuted, bg: C.white },
+    { label: 'Jours ouvrés',     value: ouvres,       isNum: true,  color: C.txtDark,  bg: C.bgSurface2 },
+    { label: 'Jours fériés',     value: nbFeries,     isNum: true,  color: C.txtMuted, bg: C.bgSurface2 },
+    { label: 'Jours travaillés', value: worked,       isNum: true,  color: C.txtGreen, bg: C.bgGreen  },
+    { label: 'Congés payés',     value: conge,        isNum: true,  color: C.txtGreen, bg: C.bgGreen  },
+    { label: 'RTT',              value: rtt,          isNum: true,  color: C.txtBlue,  bg: C.bgBlue   },
+    { label: 'Total imputé',     value: totalImpute,  isNum: true,  color: diffColor,  bg: diffBg     },
+  ];
+
+  indicators.forEach(({ label, value, isNum, color, bg }) => {
+    setCell(curRow, 0, cell(label, sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
+    const valCell = isNum
+      ? { v: value, t: 'n', s: sty({ bg, bold: true, color, sz: 14, center: true, border: true }) }
+      : cell(value, sty({ bg, bold: false, color, sz: 11, left: true, border: true }));
+    setCell(curRow, 1, valCell);
+    for (let c = 2; c <= 5; c++) setCell(curRow, c, emptyCell(sty({ bg: C.white })));
+    curRow++;
+  });
+
+  // ── LÉGENDE couleurs ─────────────────────────────────────────────────────
+  curRow++;
+  const legendItems = [
+    { label: 'Week-end',            bg: C.bgWE      },
+    { label: 'Jour férié',          bg: C.bgFerie   },
+    { label: 'Férié travaillé',     bg: C.bgFerieUnlk },
+    { label: 'Jour grisé',          bg: C.bgGrey    },
+    { label: 'Journée (1)',         bg: C.bgGreen   },
+    { label: 'Demi-journée (0.5)',  bg: C.bgBlue    },
+  ];
+  setCell(curRow, 0, cell('Légende', sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true })));
+  curRow++;
+  legendItems.forEach(({ label, bg }) => {
+    setCell(curRow, 0, emptyCell(sty({ bg, border: true })));
+    setCell(curRow, 1, cell(label, sty({ bg: C.white, color: C.txtMuted, sz: 9, left: true })));
+    curRow++;
+  });
+
+  // ── Dimensions colonnes / lignes ─────────────────────────────────────────
+  ws['!cols'] = [
+    { wch: 26 },
+    ...Array(days).fill({ wch: 5 }),
+    { wch: 7 },
+  ];
+  // Hauteur ligne en-tête jours (pour afficher le nom du férié)
+  ws['!rows'] = ws['!rows'] || [];
+  ws['!rows'][2] = { hpt: 42 }; // ligne 3 (index 2) = en-tête jours
+
+  ws['!ref'] = XLSX.utils.encode_range({ s: {r:0,c:0}, e: {r:curRow, c:Math.max(lastCol, 5)} });
+
   XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[month]} ${year}`);
-  XLSX.writeFile(wb, `CRA_${societe.replace(/\s+/g,'_')}_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`);
+  XLSX.writeFile(wb, `CRA_${societe.replace(/\s+/g,'_')}_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`, { cellStyles: true, bookSST: false });
   toast('Export réussi !');
 }
 
@@ -714,12 +967,17 @@ function importExcel(evt) {
         if (mo) { const mi = MONTHS.indexOf(mo[1].trim()); if(mi>=0) month=mi; year=parseInt(mo[2])||year; }
       }
 
-      // Jours grisés manuels
+      // Jours grisés manuels + fériés déverrouillés
       const gk = greyKey();
-      greyedDays[gk] = new Set();
-      const greyRow = (rows[1] && rows[1][0] ? rows[1][0] : '').toString();
-      const gm = greyRow.match(/^GREY:(.+)$/);
-      if (gm) { gm[1].split(',').forEach(n => { const d=parseInt(n); if(d>=1&&d<=31) greyedDays[gk].add(d); }); }
+      greyedDays[gk]     = new Set();
+      unlockedFeries[gk] = new Set();
+      const metaRow = (rows[1] && rows[1][0] ? rows[1][0] : '').toString();
+      metaRow.split('|').forEach(part => {
+        const gm = part.match(/^GREY:(.+)$/);
+        if (gm) gm[1].split(',').forEach(n => { const d=parseInt(n); if(d>=1&&d<=31) greyedDays[gk].add(d); });
+        const um = part.match(/^UNLOCK:(.+)$/);
+        if (um) um[1].split(',').forEach(n => { const d=parseInt(n); if(d>=1&&d<=31) unlockedFeries[gk].add(d); });
+      });
 
       data = {}; activities = [];
       let hIdx = -1;
