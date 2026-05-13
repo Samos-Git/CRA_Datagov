@@ -913,31 +913,6 @@ async function exportExcel() {
     R++;
   });
 
-  // ── LÉGENDE ───────────────────────────────────────────────────────────────
-  ws.getRow(R).height = 8; fillRow(R, P.white, 1, 6); R++;
-  const legTitle = ws.getCell(R, 1);
-  legTitle.value = 'Légende';
-  legTitle.font  = { name: FONT, bold: true, size: 9, color: { argb: hexToArgb(P.mutedTxt) } };
-  legTitle.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(P.header) } };
-  legTitle.alignment = { horizontal: 'left', vertical: 'middle' };
-  ws.mergeCells(R, 1, R, 6); R++;
-
-  const legendDefs = [
-    { label: 'Week-end',           bg: P.we     },
-    { label: 'Jour férié',         bg: P.ferie  },
-    { label: 'Férié travaillé',    bg: P.unlock },
-    { label: 'Jour grisé',         bg: P.grey   },
-    { label: 'Journée (1)',        bg: P.green  },
-    { label: 'Demi-journée (0.5)', bg: P.blue   },
-  ];
-  legendDefs.forEach(({ label, bg }) => {
-    ws.getRow(R).height = 16;
-    setCell(R, 1, null, bg, P.mutedTxt, {});
-    setCell(R, 2, label, P.white, P.mutedTxt, { size: 9, h: 'left', border: false });
-    for (let c = 3; c <= 6; c++) setCell(R, c, null, P.white, P.mutedTxt, { border: false });
-    R++;
-  });
-
   // ── Téléchargement ────────────────────────────────────────────────────────
   const filename = `CRA_${societe.replace(/\s+/g,'_')}_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`;
   const buffer = await wb.xlsx.writeBuffer();
