@@ -1,337 +1,617 @@
-
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CRA — Compte Rendu d'Activité</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-.cra{padding:1rem 0;}
-.top-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
-.top-bar input{padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);}
-.top-bar input:focus{outline:none;border-color:#1D9E75;}
-.collab-input{min-width:180px;flex:1;max-width:260px;}
-.divider{height:22px;width:0.5px;background:var(--color-border-tertiary);}
-.month-nav{display:flex;align-items:center;gap:6px;}
-.month-nav button{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 10px;cursor:pointer;color:var(--color-text-primary);font-size:13px;}
-.month-nav button:hover{background:var(--color-background-secondary);}
-.month-label{font-size:14px;font-weight:500;min-width:140px;text-align:center;color:var(--color-text-primary);}
-.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
-.toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.toolbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.btn{padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;font-size:13px;background:transparent;color:var(--color-text-primary);display:inline-flex;align-items:center;gap:5px;}
-.btn:hover{background:var(--color-background-secondary);}
-.btn-green{background:#0F6E56;border-color:#0F6E56;color:#fff;}
-.btn-green:hover{background:#085041;}
-.btn-blue{background:#185FA5;border-color:#185FA5;color:#fff;}
-.btn-blue:hover{background:#0C447C;}
-.act-input{padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);width:220px;}
-.act-input:focus{outline:none;border-color:#1D9E75;}
-.table-wrap{overflow-x:auto;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px;}
-thead th{background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500;font-size:11px;padding:7px 3px;text-align:center;border-bottom:0.5px solid var(--color-border-tertiary);position:sticky;top:0;z-index:2;}
-thead th.act-col{text-align:left;padding-left:8px;min-width:170px;position:sticky;left:0;z-index:3;background:var(--color-background-secondary);}
-.dh{display:flex;flex-direction:column;align-items:center;gap:1px;}
-.dn{font-size:9px;color:var(--color-text-tertiary);}
-.dd{font-size:11px;font-weight:500;}
-.we-th{opacity:.4;}
-tbody tr{border-bottom:0.5px solid var(--color-border-tertiary);}
-tbody tr:last-child{border-bottom:none;}
-td.act-col{padding:5px 6px 5px 8px;font-size:12px;color:var(--color-text-primary);font-weight:500;position:sticky;left:0;background:var(--color-background-primary);z-index:1;border-right:0.5px solid var(--color-border-tertiary);min-width:170px;}
-.lbl-row{display:flex;align-items:center;justify-content:space-between;gap:4px;}
-.lbl-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.del-btn{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:4px;cursor:pointer;color:#A32D2D;font-size:11px;padding:2px 5px;display:inline-flex;align-items:center;flex-shrink:0;line-height:1;}
-.del-btn:hover{background:#F7C1C1;}
-.lbl-conge{color:#085041;}
-.lbl-rtt{color:#0C447C;}
-td.dc{padding:2px 2px;text-align:center;vertical-align:middle;}
-td.dc.we{background:var(--color-background-tertiary);}
-select.cs{width:44px;padding:2px 0;border:0.5px solid transparent;border-radius:4px;text-align:center;font-size:11px;cursor:pointer;appearance:none;background:transparent;color:var(--color-text-primary);}
-select.cs:hover,select.cs:focus{border-color:var(--color-border-secondary);background:var(--color-background-secondary);outline:none;}
-select.cs.v1{background:#e1f5ee;color:#085041;border-color:#9FE1CB;}
-select.cs.vh{background:#e6f1fb;color:#0C447C;border-color:#B5D4F4;}
-select.cs.vc{background:#e1f5ee;color:#085041;border-color:#9FE1CB;}
-select.cs.vr{background:#faeeda;color:#633806;border-color:#FAC775;}
-.sep-row td{height:2px;background:var(--color-border-tertiary);padding:0;}
-.sep-row td.act-col{background:var(--color-border-tertiary);}
-.tot-row td{background:var(--color-background-secondary);font-size:11px;font-weight:500;color:var(--color-text-secondary);}
-.tot-row td.act-col{color:var(--color-text-secondary);}
-td.tc{font-size:11px;font-weight:500;color:var(--color-text-primary);}
-td.tc.over{color:#A32D2D;}td.tc.ok{color:#085041;}td.tc.blu{color:#0C447C;}td.tc.amb{color:#633806;}
-.summary{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;}
-.sc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;flex:1;min-width:100px;}
-.sc .sl{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;}
-.sc .sv{font-size:18px;font-weight:500;color:var(--color-text-primary);}
-.sv.green{color:#085041;}.sv.blue{color:#0C447C;}.sv.amber{color:#633806;}.sv.red{color:#A32D2D;}
-.toast{display:inline-block;margin-left:12px;background:#e1f5ee;color:#085041;border:0.5px solid #9FE1CB;padding:4px 10px;border-radius:var(--border-radius-md);font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;}
-.toast.err{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1;}
-.toast.show{opacity:1;}
+:root {
+  --bg: #F7F6F3;
+  --surface: #FFFFFF;
+  --surface2: #F0EEE9;
+  --border: #E2DED7;
+  --border2: #CCC8C0;
+  --text: #1A1917;
+  --text2: #6B6760;
+  --text3: #A5A29C;
+  --green: #1D6B4E;
+  --green-bg: #E8F5EE;
+  --green-mid: #A8D5BC;
+  --blue: #1A4F7A;
+  --blue-bg: #E6F0F8;
+  --blue-mid: #A0BDD6;
+  --amber: #7A4A0E;
+  --amber-bg: #FBF0DC;
+  --amber-mid: #E8C97A;
+  --red: #8B2020;
+  --red-bg: #FBEAEA;
+  --red-mid: #E0A0A0;
+  --we-bg: #EDEBE5;
+  --grey-day-bg: #DFE0DC;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+.page { max-width: 1400px; margin: 0 auto; padding: 32px 24px 60px; }
+
+.app-header { margin-bottom: 28px; }
+.app-header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); }
+.app-header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+.controls {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap; box-shadow: var(--shadow);
+}
+.controls-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+.input-group { display: flex; align-items: center; gap: 8px; }
+.input-label { font-size: 12px; color: var(--text3); font-weight: 500; white-space: nowrap; }
+input[type="text"] {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 12px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(29,107,78,0.1); }
+#collabInput { min-width: 200px; }
+#actInput { min-width: 220px; }
+
+.month-nav { display: flex; align-items: center; gap: 6px; }
+.nav-btn {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg); color: var(--text2);
+  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.nav-btn:hover { border-color: var(--border2); background: var(--surface2); color: var(--text); }
+.month-display { font-size: 14px; font-weight: 600; min-width: 148px; text-align: center; color: var(--text); letter-spacing: -0.2px; }
+.spacer { flex: 1; }
+
+.btn {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg); color: var(--text2); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--border2); background: var(--surface2); color: var(--text); }
+.btn-primary { background: var(--green); color: #fff; border-color: var(--green); }
+.btn-primary:hover { background: #155a40; border-color: #155a40; color: #fff; }
+.btn-secondary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-secondary:hover { background: #143d5e; border-color: #143d5e; color: #fff; }
+.btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.add-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.toast-inline { font-size: 12px; padding: 5px 10px; border-radius: var(--radius-sm); opacity: 0; transition: opacity .25s; pointer-events: none; }
+.toast-ok  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-mid); opacity: 1; }
+.toast-err { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-mid);  opacity: 1; }
+
+.legend {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 12px;
+  font-size: 12px; color: var(--text2); flex-wrap: wrap;
+}
+.legend-note { color: var(--text3); font-size: 11px; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; border: 1px solid var(--border2); }
+.l-we   { background: var(--we-bg); }
+.l-grey { background: var(--grey-day-bg); }
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+thead th {
+  background: var(--surface2); color: var(--text3); font-weight: 500;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 9px 2px; text-align: center; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 2; white-space: nowrap;
+}
+thead th.col-act {
+  text-align: left; padding-left: 16px; min-width: 190px;
+  position: sticky; left: 0; z-index: 3; background: var(--surface2);
+}
+thead th.col-tot { min-width: 50px; padding: 0 10px; }
+
+th.day-th {
+  cursor: pointer; user-select: none; transition: background .12s;
+  min-width: 48px;
+}
+th.day-th:hover { background: #E4E1DA; }
+th.day-th.we-col  { background: var(--we-bg); }
+th.day-th.we-col:hover { background: #E0DDD7; }
+th.day-th.grey-col { background: var(--grey-day-bg); }
+th.day-th.grey-col:hover { background: #D5D6D2; }
+
+.day-head { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.day-name { font-size: 9px; color: var(--text3); }
+.day-num  { font-size: 11px; font-weight: 600; color: var(--text2); }
+th.we-col .day-name,   th.we-col .day-num   { opacity: 0.5; }
+th.grey-col .day-name, th.grey-col .day-num { opacity: 0.4; }
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr.act-row:hover { background: #FAFAF8; }
+
+td.col-act {
+  padding: 7px 10px 7px 16px; font-size: 13px; font-weight: 500; color: var(--text);
+  position: sticky; left: 0; background: var(--surface); z-index: 1;
+  border-right: 1px solid var(--border); white-space: nowrap;
+}
+tr.act-row:hover td.col-act     { background: #FAFAF8; }
+tr.special-row:hover td.col-act { background: #FAFAF8; }
+tr.special-row:hover            { background: #FAFAF8; }
+tr.special-row td.col-act       { background: var(--surface); }
+
+.act-label-wrap { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.act-name { overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
+.del-btn {
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+  background: var(--red-bg); color: var(--red); border: 1px solid var(--red-mid);
+  border-radius: 4px; padding: 2px 7px; cursor: pointer; flex-shrink: 0; transition: all .12s;
+}
+.del-btn:hover { background: var(--red-mid); }
+
+td.col-conge { color: var(--green); font-size: 13px; font-weight: 500; }
+td.col-rtt   { color: var(--blue);  font-size: 13px; font-weight: 500; }
+
+td.dc { padding: 3px 2px; text-align: center; vertical-align: middle; }
+td.dc.we       { background: var(--we-bg); }
+td.dc.grey-day { background: var(--grey-day-bg); }
+td.dc.grey-day select.cs { opacity: 0.3; pointer-events: none; }
+
+select.cs {
+  font-family: 'DM Mono', monospace; width: 46px; font-size: 11px; font-weight: 500;
+  padding: 4px 2px; border-radius: 5px; border: 1px solid transparent;
+  text-align: center; cursor: pointer; appearance: none;
+  background: transparent; color: var(--text2); transition: all .12s;
+}
+select.cs:hover { border-color: var(--border); background: var(--surface2); }
+select.cs:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 2px rgba(29,107,78,0.12); }
+select.cs.v1 { background: var(--green-bg); color: var(--green); border-color: var(--green-mid); font-weight: 600; }
+select.cs.vh { background: var(--blue-bg);  color: var(--blue);  border-color: var(--blue-mid);  font-weight: 600; }
+select.cs.vc { background: var(--green-bg); color: var(--green); border-color: var(--green-mid); font-weight: 600; }
+select.cs.vr { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-mid); font-weight: 600; }
+
+tr.sep-row td { height: 3px; background: var(--surface2); padding: 0; border-bottom: 1px solid var(--border); }
+tr.sep-row td.col-act { background: var(--surface2); }
+tr.tot-row td { background: var(--surface2); font-weight: 600; font-size: 11px; color: var(--text3); }
+tr.tot-row td.col-act { color: var(--text3); font-size: 11px; letter-spacing: 0.2px; }
+
+td.tc { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; text-align: center; color: var(--text2); padding: 4px 8px; }
+td.tc.ok   { color: var(--green); }
+td.tc.blu  { color: var(--blue);  }
+td.tc.over { color: var(--red);   }
+td.tc.amb  { color: var(--amber); }
+
+.empty-state { padding: 24px 16px; text-align: center; color: var(--text3); font-size: 13px; font-style: italic; }
+
+/* ── SUMMARY ── */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.sc-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.sc-value { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 400; color: var(--text); line-height: 1; }
+.sc-value.green { color: var(--green); }
+.sc-value.blue  { color: var(--blue);  }
+.sc-value.amber { color: var(--amber); }
+.sc-value.red   { color: var(--red);   }
+.sc-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+#globalToast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; background: var(--text); color: #fff;
+  opacity: 0; transform: translateY(8px); transition: all .25s; pointer-events: none;
+}
+#globalToast.show { opacity: 1; transform: translateY(0); }
+#globalToast.err  { background: var(--red); }
 </style>
+</head>
+<body>
+<div class="page">
 
-<h2 class="sr-only">CRA — Compte Rendu d'Activité</h2>
-<div class="cra">
+  <div class="app-header">
+    <h1>Compte Rendu d'Activité</h1>
+    <p>Saisie et suivi des activités, congés et RTT</p>
+  </div>
 
-  <div class="top-bar">
-    <i class="ti ti-user" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
-    <input class="collab-input" type="text" id="collabName" placeholder="Nom du collaborateur..." oninput="updateSummary()" />
-    <div class="divider"></div>
+  <div class="controls">
+    <div class="input-group">
+      <span class="input-label">Collaborateur</span>
+      <input type="text" id="collabInput" placeholder="Nom prénom…" oninput="updateSummary()" />
+    </div>
+    <div class="controls-divider"></div>
     <div class="month-nav">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span class="month-label" id="monthLabel"></span>
-      <button onclick="changeMonth(1)">›</button>
+      <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="month-display" id="monthDisplay"></span>
+      <button class="nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-secondary" onclick="document.getElementById('fileIn').click()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importer Excel
+    </button>
+    <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)" />
+    <button class="btn btn-primary" onclick="exportExcel()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exporter Excel
+    </button>
+  </div>
+
+  <div class="add-row">
+    <input type="text" id="actInput" placeholder="Nom du projet ou de l'activité à ajouter…" onkeydown="if(event.key==='Enter')addActivity()" />
+    <button class="btn btn-primary" onclick="addActivity()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter une activité
+    </button>
+    <span id="toastInline" class="toast-inline"></span>
+  </div>
+
+  <div class="legend">
+    <span class="legend-note">Cliquer sur un numéro de jour pour le grisér / dé-grisér</span>
+    <span class="legend-item"><span class="legend-dot l-we"></span> Week-end</span>
+    <span class="legend-item"><span class="legend-dot l-grey"></span> Jour grisé (férié, fermeture…)</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead id="tHead"></thead>
+        <tbody id="tBody"></tbody>
+      </table>
     </div>
   </div>
 
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <input class="act-input" type="text" id="newAct" placeholder="Nouvelle activité / projet..." onkeydown="if(event.key==='Enter')addActivity()" />
-      <button class="btn" onclick="addActivity()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter</button>
-      <span class="toast" id="toast"></span>
-    </div>
-    <div class="toolbar-right">
-      <button class="btn btn-blue" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload" aria-hidden="true"></i> Importer</button>
-      <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)" />
-      <button class="btn btn-green" onclick="exportExcel()"><i class="ti ti-download" aria-hidden="true"></i> Exporter</button>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead id="tHead"></thead>
-      <tbody id="tBody"></tbody>
-    </table>
-  </div>
-  <div class="summary" id="summary"></div>
+  <div class="summary-grid" id="summary"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div id="globalToast"></div>
+
 <script>
-const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const DAYS=['dim','lun','mar','mer','jeu','ven','sam'];
-let year=new Date().getFullYear(), month=new Date().getMonth();
-let activities=[];
-let data={};
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAYS   = ['dim','lun','mar','mer','jeu','ven','sam'];
 
-function k(row,col){return `${year}|${month}|${row}|${col}`;}
-function daysInM(y,m){return new Date(y,m+1,0).getDate();}
-function isWE(d){const w=new Date(year,month,d).getDay();return w===0||w===6;}
-function get(row,col){return data[k(row,col)]||'';}
-function set(row,col,val){const ky=k(row,col);if(val==='')delete data[ky];else data[ky]=val;updateSummary();}
+let year  = new Date().getFullYear();
+let month = new Date().getMonth();
+let activities = [];
+let data = {};
+let greyedDays = {};  // key: "year|month" → Set of day numbers
 
-function vCls(v,type){
-  if(type==='act'){return v==='1'?'v1':v==='0.5'?'vh':'';}
-  if(type==='conge'){return(v==='1'||v==='0.5')?'vc':'';}
-  if(type==='rtt'){return(v==='1'||v==='0.5')?'vr':'';}
+function greyKey() { return `${year}|${month}`; }
+function getGreyed() { return greyedDays[greyKey()] || new Set(); }
+function isGreyed(d) { return getGreyed().has(d); }
+function toggleGrey(d) {
+  const k = greyKey();
+  if (!greyedDays[k]) greyedDays[k] = new Set();
+  if (greyedDays[k].has(d)) greyedDays[k].delete(d);
+  else greyedDays[k].add(d);
+  render();
+}
+
+function k(row, col) { return `${year}|${month}|${row}|${col}`; }
+function daysInM(y, m) { return new Date(y, m+1, 0).getDate(); }
+function isWE(d) { const w = new Date(year, month, d).getDay(); return w===0||w===6; }
+function get(row, col) { return data[k(row,col)] || ''; }
+function set(row, col, val) {
+  const ky = k(row, col);
+  if (val === '') delete data[ky]; else data[ky] = val;
+  updateSummary();
+}
+
+function vCls(v, type) {
+  if (type === 'act')   return v==='1'?'v1':v==='0.5'?'vh':'';
+  if (type === 'conge') return (v==='1'||v==='0.5')?'vc':'';
+  if (type === 'rtt')   return (v==='1'||v==='0.5')?'vr':'';
   return '';
 }
 
-function toast(msg,err=false){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast'+(err?' err':'')+' show';
-  setTimeout(()=>t.classList.remove('show'),2200);
+function toast(msg, err=false) {
+  const t = document.getElementById('globalToast');
+  t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.className = '', 2400);
+}
+function toastInline(msg, err=false) {
+  const t = document.getElementById('toastInline');
+  t.textContent = msg; t.className = 'toast-inline ' + (err ? 'toast-err' : 'toast-ok');
+  clearTimeout(t._tid); t._tid = setTimeout(() => { t.className = 'toast-inline'; t.textContent = ''; }, 2200);
 }
 
-function changeMonth(d){month+=d;if(month>11){month=0;year++;}if(month<0){month=11;year--;}render();}
-
-function addActivity(){
-  const inp=document.getElementById('newAct');
-  const v=inp.value.trim();
-  if(!v){toast('Saisissez un nom d\'activité',true);return;}
-  if(activities.includes(v)){toast('Activité déjà existante',true);return;}
-  activities.push(v);render();inp.value='';toast('Activité ajoutée');
+function changeMonth(delta) {
+  month += delta;
+  if (month > 11) { month = 0; year++; }
+  if (month < 0)  { month = 11; year--; }
+  render();
 }
 
-function removeActivity(i){
-  const name=activities[i];
-  activities.splice(i,1);
-  const days=daysInM(year,month);
-  for(let d=1;d<=days;d++) delete data[k(i,d)];
-  activities.forEach((_,ni)=>{
-    if(ni>=i){
-      for(let d=1;d<=days;d++){
-        const oldKey=k(ni+1,d), newKey=k(ni,d);
-        if(data[oldKey]!==undefined){data[newKey]=data[oldKey];delete data[oldKey];}
+function addActivity() {
+  const inp = document.getElementById('actInput');
+  const v = inp.value.trim();
+  if (!v) { toastInline('Saisissez un nom d\'activité', true); return; }
+  if (activities.includes(v)) { toastInline('Activité déjà existante', true); return; }
+  activities.push(v); render(); inp.value = ''; toastInline('Activité ajoutée');
+}
+
+function removeActivity(i) {
+  const name = activities[i];
+  const days = daysInM(year, month);
+  for (let d = 1; d <= days; d++) delete data[k(i, d)];
+  activities.splice(i, 1);
+  // shift remaining indices down
+  activities.forEach((_, ni) => {
+    if (ni >= i) {
+      for (let d = 1; d <= days; d++) {
+        const oldKey = k(ni+1, d), newKey = k(ni, d);
+        if (data[oldKey] !== undefined) { data[newKey] = data[oldKey]; delete data[oldKey]; }
         else delete data[newKey];
       }
     }
   });
-  render();toast(`"${name}" supprimée`);
+  render(); toast(`"${name}" supprimée`);
 }
 
-function makeSelect(rowKey,d,type){
-  const v=get(rowKey,d);
-  const c=vCls(v,type);
-  return `<select class="cs ${c}" onchange="set('${rowKey}',${d},this.value);updateCellCls(this,'${type}')">`
-    +`<option value="">—</option>`
-    +`<option value="1"${v==='1'?' selected':''}>1</option>`
-    +`<option value="0.5"${v==='0.5'?' selected':''}>0.5</option>`
-    +`</select>`;
+function makeSelect(rowKey, d, type) {
+  const v = get(rowKey, d);
+  const c = vCls(v, type);
+  return `<select class="cs ${c}" onchange="set('${rowKey}',${d},this.value);this.className='cs '+vCls(this.value,'${type}')">`
+    + `<option value="">—</option>`
+    + `<option value="1"${v==='1'?' selected':''}>1</option>`
+    + `<option value="0.5"${v==='0.5'?' selected':''}>½</option>`
+    + `</select>`;
 }
 
-function updateCellCls(sel,type){
-  sel.className='cs '+vCls(sel.value,type);
+function cellClass(d) {
+  if (isGreyed(d)) return 'grey-day';
+  if (isWE(d))     return 'we';
+  return '';
 }
 
-function render(){
-  document.getElementById('monthLabel').textContent=`${MONTHS[month]} ${year}`;
-  const days=daysInM(year,month);
+function render() {
+  const days = daysInM(year, month);
+  document.getElementById('monthDisplay').textContent = `${MONTHS[month]} ${year}`;
 
-  let h=`<tr><th class="act-col">Activité / Jour</th>`;
-  for(let d=1;d<=days;d++){
-    const we=isWE(d);
-    h+=`<th class="${we?'we-th':''}"><div class="dh"><span class="dn">${DAYS[new Date(year,month,d).getDay()]}</span><span class="dd">${d}</span></div></th>`;
+  // ── THEAD ──
+  let h = `<tr><th class="col-act">Activité / Jour</th>`;
+  for (let d = 1; d <= days; d++) {
+    const we = isWE(d), gr = isGreyed(d);
+    const dow = DAYS[new Date(year, month, d).getDay()];
+    const thCls = gr ? 'grey-col' : we ? 'we-col' : '';
+    h += `<th class="day-th ${thCls}" onclick="toggleGrey(${d})" title="Clic : grisér / dé-grisér">`
+       + `<div class="day-head"><span class="day-name">${dow}</span><span class="day-num">${d}</span></div></th>`;
   }
-  h+=`<th style="min-width:44px;padding:0 4px;">Tot.</th></tr>`;
-  document.getElementById('tHead').innerHTML=h;
+  h += `<th class="col-tot">Total</th></tr>`;
+  document.getElementById('tHead').innerHTML = h;
 
-  let b='';
-  activities.forEach((act,i)=>{
-    b+=`<tr><td class="act-col"><div class="lbl-row"><span class="lbl-text" title="${act}">${act}</span>`
-      +`<button class="del-btn" onclick="removeActivity(${i})" title="Supprimer cette activité"><i class="ti ti-trash" aria-hidden="true" style="font-size:11px;"></i> Suppr.</button>`
-      +`</div></td>`;
-    let tot=0;
-    for(let d=1;d<=days;d++){
-      const we=isWE(d);const v=get(i,d);
-      if(v==='1')tot+=1;else if(v==='0.5')tot+=0.5;
-      b+=`<td class="dc${we?' we':''}">${we?'<span style="color:var(--color-text-tertiary);font-size:10px;">·</span>':makeSelect(i,d,'act')}</td>`;
-    }
-    b+=`<td class="tc">${tot||''}</td></tr>`;
-  });
+  // ── TBODY ──
+  let b = '';
 
-  if(activities.length===0){
-    b+=`<tr><td class="act-col" colspan="${days+2}" style="color:var(--color-text-tertiary);font-size:12px;padding:12px 10px;">Aucune activité — ajoutez-en une ci-dessus</td></tr>`;
+  // — Activités —
+  if (activities.length === 0) {
+    b += `<tr><td class="col-act empty-state" colspan="${days+2}">Aucune activité — utilisez le champ ci-dessus pour en ajouter</td></tr>`;
+  } else {
+    activities.forEach((act, i) => {
+      b += `<tr class="act-row">`
+         + `<td class="col-act"><div class="act-label-wrap">`
+         + `<span class="act-name" title="${act}">${act}</span>`
+         + `<button class="del-btn" onclick="removeActivity(${i})">✕ Suppr.</button>`
+         + `</div></td>`;
+      let tot = 0;
+      for (let d = 1; d <= days; d++) {
+        const v = get(i, d);
+        if (v==='1') tot+=1; else if (v==='0.5') tot+=0.5;
+        const cc = cellClass(d);
+        b += `<td class="dc ${cc}">${makeSelect(i, d, 'act')}</td>`;
+      }
+      b += `<td class="tc">${tot || ''}</td></tr>`;
+    });
   }
 
-  b+=`<tr class="sep-row"><td class="act-col" colspan="${days+2}"></td></tr>`;
+  // — Séparateur —
+  b += `<tr class="sep-row"><td class="col-act" colspan="${days+2}"></td></tr>`;
 
-  const special=[
-    {key:'conge',label:'<i class="ti ti-beach" aria-hidden="true" style="font-size:12px;margin-right:4px;vertical-align:-1px;"></i>Congés payés',cls:'lbl-conge',type:'conge',tcls:'ok'},
-    {key:'rtt',label:'<i class="ti ti-sun" aria-hidden="true" style="font-size:12px;margin-right:4px;vertical-align:-1px;"></i>RTT',cls:'lbl-rtt',type:'rtt',tcls:'blu'}
+  // — Congés payés + RTT (saisie sur tous les jours y compris WE) —
+  const special = [
+    { key:'conge', label:'Congés payés', tdcls:'col-conge', type:'conge', tcls:'ok'  },
+    { key:'rtt',   label:'RTT',          tdcls:'col-rtt',   type:'rtt',   tcls:'blu' },
   ];
-  special.forEach(({key,label,cls,type,tcls})=>{
-    b+=`<tr><td class="act-col ${cls}">${label}</td>`;
-    let tot=0;
-    for(let d=1;d<=days;d++){
-      const we=isWE(d);const v=get(key,d);
-      if(v==='1')tot+=1;else if(v==='0.5')tot+=0.5;
-      b+=`<td class="dc${we?' we':''}">${we?'<span style="color:var(--color-text-tertiary);font-size:10px;">·</span>':makeSelect(key,d,type)}</td>`;
+  special.forEach(({ key, label, tdcls, type, tcls }) => {
+    b += `<tr class="special-row"><td class="col-act ${tdcls}">${label}</td>`;
+    let tot = 0;
+    for (let d = 1; d <= days; d++) {
+      const v = get(key, d);
+      if (v==='1') tot+=1; else if (v==='0.5') tot+=0.5;
+      const cc = cellClass(d);
+      b += `<td class="dc ${cc}">${makeSelect(key, d, type)}</td>`;
     }
-    b+=`<td class="tc ${tot?tcls:''}">${tot||''}</td></tr>`;
+    b += `<td class="tc ${tot ? tcls : ''}">${tot || ''}</td></tr>`;
   });
 
-  b+=`<tr class="tot-row"><td class="act-col">Total / jour</td>`;
-  let grand=0;
-  for(let d=1;d<=days;d++){
-    if(isWE(d)){b+=`<td class="dc we"></td>`;continue;}
-    let s=0;
-    activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    ['conge','rtt'].forEach(r=>{const v=get(r,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    grand+=s;
-    b+=`<td class="dc tc ${s>1?'over':s===1?'ok':''}">${s||''}</td>`;
+  // — Total / jour —
+  b += `<tr class="tot-row"><td class="col-act">Total / jour</td>`;
+  let grand = 0;
+  for (let d = 1; d <= days; d++) {
+    let s = 0;
+    activities.forEach((_, i) => { const v = get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    ['conge','rtt'].forEach(r => { const v = get(r,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    grand += s;
+    const cc = cellClass(d);
+    b += `<td class="dc tc ${cc} ${s>1?'over':s===1?'ok':''}">${s || ''}</td>`;
   }
-  b+=`<td class="tc">${grand||''}</td></tr>`;
-  document.getElementById('tBody').innerHTML=b;
+  b += `<td class="tc">${grand || ''}</td></tr>`;
+
+  document.getElementById('tBody').innerHTML = b;
   updateSummary();
 }
 
-function updateSummary(){
-  const days=daysInM(year,month);
-  let worked=0,conge=0,rtt=0,ouvres=0;
-  for(let d=1;d<=days;d++){
-    if(!isWE(d))ouvres++;
-    const c=get('conge',d);if(c==='1')conge+=1;else if(c==='0.5')conge+=0.5;
-    const r=get('rtt',d);if(r==='1')rtt+=1;else if(r==='0.5')rtt+=0.5;
-    let s=0;activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    worked+=s;
+function updateSummary() {
+  const days = daysInM(year, month);
+  let worked = 0, conge = 0, rtt = 0, ouvres = 0;
+  for (let d = 1; d <= days; d++) {
+    if (!isWE(d) && !isGreyed(d)) ouvres++;
+    const c = get('conge', d); if(c==='1') conge+=1; else if(c==='0.5') conge+=0.5;
+    const r = get('rtt', d);   if(r==='1') rtt+=1;   else if(r==='0.5') rtt+=0.5;
+    let s = 0;
+    activities.forEach((_, i) => { const v = get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    worked += s;
   }
-  const total=worked+conge+rtt;
-  const diff=total-ouvres;
-  const dc=diff>0.05?'red':diff<-0.05?'amber':'green';
-  const name=document.getElementById('collabName').value.trim()||'Collaborateur';
-  document.getElementById('summary').innerHTML=`
-    <div class="sc"><div class="sl">Collaborateur</div><div class="sv" style="font-size:13px;color:var(--color-text-secondary);">${name}</div><div class="sl" style="margin-top:2px;">${MONTHS[month]} ${year}</div></div>
-    <div class="sc"><div class="sl">Jours ouvrés</div><div class="sv">${ouvres}</div></div>
-    <div class="sc"><div class="sl">Travaillés</div><div class="sv green">${worked}</div></div>
-    <div class="sc"><div class="sl">Congés</div><div class="sv green">${conge}</div></div>
-    <div class="sc"><div class="sl">RTT</div><div class="sv blue">${rtt}</div></div>
-    <div class="sc"><div class="sl">Total imputé</div><div class="sv ${dc}">${total} / ${ouvres}</div></div>
+  const total = worked + conge + rtt;
+  const diff  = total - ouvres;
+  const dc    = diff > 0.05 ? 'red' : diff < -0.05 ? 'amber' : 'green';
+  const name  = document.getElementById('collabInput').value.trim() || '—';
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-card">
+      <div class="sc-label">Collaborateur</div>
+      <div class="sc-value" style="font-size:17px;font-family:'DM Sans',sans-serif;font-weight:600;">${name}</div>
+      <div class="sc-sub">${MONTHS[month]} ${year}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Jours ouvrés</div>
+      <div class="sc-value">${ouvres}</div>
+      <div class="sc-sub">hors WE et jours grisés</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Jours travaillés</div>
+      <div class="sc-value green">${worked}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Congés payés</div>
+      <div class="sc-value green">${conge}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">RTT</div>
+      <div class="sc-value blue">${rtt}</div>
+    </div>
+    <div class="summary-card">
+      <div class="sc-label">Total imputé</div>
+      <div class="sc-value ${dc}">${total}<span style="font-size:14px;opacity:.5;margin-left:4px;">/ ${ouvres}</span></div>
+    </div>
   `;
 }
 
-function exportExcel(){
-  const days=daysInM(year,month);
-  const name=document.getElementById('collabName').value.trim()||'Collaborateur';
-  const wb=XLSX.utils.book_new();
-  const rows=[];
+function exportExcel() {
+  const days = daysInM(year, month);
+  const name = document.getElementById('collabInput').value.trim() || 'Collaborateur';
+  const wb = XLSX.utils.book_new();
+  const rows = [];
+
   rows.push([`CRA — ${name} — ${MONTHS[month]} ${year}`]);
-  rows.push([]);
-  const hRow=['Activité / Jour'];
-  for(let d=1;d<=days;d++) hRow.push(isWE(d)?`(${d})`:`${d}`);
+  // row 2: encode greyed days for re-import
+  const greyArr = [...getGreyed()].sort((a,b)=>a-b);
+  rows.push([greyArr.length ? `GREY:${greyArr.join(',')}` : '']);
+
+  const hRow = ['Activité / Jour'];
+  for (let d = 1; d <= days; d++) {
+    const we = isWE(d), gr = isGreyed(d);
+    hRow.push(we ? `(${d})` : gr ? `[${d}]` : `${d}`);
+  }
   hRow.push('Total');
   rows.push(hRow);
-  activities.forEach((act,i)=>{
-    const row=[act];let tot=0;
-    for(let d=1;d<=days;d++){const v=get(i,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n??'');}
-    row.push(tot||'');rows.push(row);
+
+  activities.forEach((act, i) => {
+    const row = [act]; let tot = 0;
+    for (let d = 1; d <= days; d++) {
+      const v = get(i,d); const n = v==='1'?1:v==='0.5'?0.5:null;
+      if (n) tot += n; row.push(n ?? '');
+    }
+    row.push(tot || ''); rows.push(row);
   });
   rows.push([]);
-  ['conge','rtt'].forEach(type=>{
-    const row=[type==='conge'?'Congés payés':'RTT'];let tot=0;
-    for(let d=1;d<=days;d++){const v=get(type,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n??'');}
-    row.push(tot||'');rows.push(row);
+  ['conge','rtt'].forEach(type => {
+    const row = [type==='conge'?'Congés payés':'RTT']; let tot = 0;
+    for (let d = 1; d <= days; d++) {
+      const v = get(type,d); const n = v==='1'?1:v==='0.5'?0.5:null;
+      if (n) tot += n; row.push(n ?? '');
+    }
+    row.push(tot || ''); rows.push(row);
   });
-  const tRow=['Total / jour'];let grand=0;
-  for(let d=1;d<=days;d++){
-    if(isWE(d)){tRow.push('');continue;}
-    let s=0;
-    activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    ['conge','rtt'].forEach(r=>{const v=get(r,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    grand+=s;tRow.push(s||'');
+  const tRow = ['Total / jour']; let grand = 0;
+  for (let d = 1; d <= days; d++) {
+    let s = 0;
+    activities.forEach((_,i) => { const v=get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    ['conge','rtt'].forEach(r => { const v=get(r,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    grand += s; tRow.push(s || '');
   }
-  tRow.push(grand||'');rows.push(tRow);
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:24},...Array(days).fill({wch:5}),{wch:7}];
-  XLSX.utils.book_append_sheet(wb,ws,`${MONTHS[month]} ${year}`);
-  XLSX.writeFile(wb,`CRA_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`);
+  tRow.push(grand || ''); rows.push(tRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:26}, ...Array(days).fill({wch:5}), {wch:7}];
+  XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[month]} ${year}`);
+  XLSX.writeFile(wb, `CRA_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`);
   toast('Export réussi !');
 }
 
-function importExcel(evt){
-  const file=evt.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(!rows||rows.length<3){toast('Fichier non reconnu',true);return;}
-      const title=(rows[0][0]||'').toString();
-      const nm=title.match(/CRA\s*—\s*(.+?)\s*—/);
-      const mo=title.match(/—\s*([^\s—]+)\s+(\d{4})$/);
-      if(nm)document.getElementById('collabName').value=nm[1].trim();
-      if(mo){const mi=MONTHS.indexOf(mo[1].trim());if(mi>=0)month=mi;year=parseInt(mo[2])||year;}
-      data={};activities=[];
-      let hIdx=-1;
-      for(let r=0;r<rows.length;r++){if((rows[r][0]||'').toString()==='Activité / Jour'){hIdx=r;break;}}
-      if(hIdx<0){toast('Format non reconnu',true);return;}
-      const days=daysInM(year,month);
-      const colMap={};
-      rows[hIdx].forEach((v,c)=>{if(c===0)return;const d=parseInt((v||'').toString().replace(/[()]/g,''));if(d>=1&&d<=days)colMap[c]=d;});
-      for(let r=hIdx+1;r<rows.length;r++){
-        const row=rows[r];const label=(row[0]||'').toString().trim();
-        if(!label)continue;
-        let rowKey;
-        if(label==='Congés payés')rowKey='conge';
-        else if(label==='RTT')rowKey='rtt';
-        else if(label==='Total / jour')break;
-        else{activities.push(label);rowKey=activities.length-1;}
-        Object.entries(colMap).forEach(([c,d])=>{
-          const v=row[parseInt(c)];
-          if(v===1||v==='1')set(rowKey,d,'1');
-          else if(v===0.5||v==='0.5')set(rowKey,d,'0.5');
+function importExcel(evt) {
+  const file = evt.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if (!rows || rows.length < 3) { toast('Fichier non reconnu', true); return; }
+
+      const title = (rows[0][0] || '').toString();
+      const nm = title.match(/CRA\s*—\s*(.+?)\s*—/);
+      const mo = title.match(/—\s*([^\s—]+)\s+(\d{4})$/);
+      if (nm) document.getElementById('collabInput').value = nm[1].trim();
+      if (mo) {
+        const mi = MONTHS.indexOf(mo[1].trim());
+        if (mi >= 0) month = mi;
+        year = parseInt(mo[2]) || year;
+      }
+
+      // restore greyed days
+      const gk = greyKey();
+      greyedDays[gk] = new Set();
+      const greyRow = (rows[1] && rows[1][0] ? rows[1][0] : '').toString();
+      const greyMatch = greyRow.match(/^GREY:(.+)$/);
+      if (greyMatch) {
+        greyMatch[1].split(',').forEach(n => {
+          const d = parseInt(n); if (d>=1 && d<=31) greyedDays[gk].add(d);
         });
       }
-      render();toast('Import réussi !');
-    }catch(err){toast('Erreur lors de l\'import',true);}
-    evt.target.value='';
+
+      data = {}; activities = [];
+      let hIdx = -1;
+      for (let r = 0; r < rows.length; r++) {
+        if ((rows[r][0]||'').toString() === 'Activité / Jour') { hIdx = r; break; }
+      }
+      if (hIdx < 0) { toast('Format non reconnu', true); return; }
+
+      const days = daysInM(year, month);
+      const colMap = {};
+      rows[hIdx].forEach((v,c) => {
+        if (c===0) return;
+        const d = parseInt((v||'').toString().replace(/[()[\]]/g,''));
+        if (d>=1 && d<=days) colMap[c] = d;
+      });
+
+      for (let r = hIdx+1; r < rows.length; r++) {
+        const row = rows[r];
+        const label = (row[0]||'').toString().trim();
+        if (!label) continue;
+        let rowKey;
+        if (label==='Congés payés')   rowKey='conge';
+        else if (label==='RTT')        rowKey='rtt';
+        else if (label==='Total / jour') break;
+        else { activities.push(label); rowKey = activities.length-1; }
+        Object.entries(colMap).forEach(([c,d]) => {
+          const v = row[parseInt(c)];
+          if (v===1||v==='1') set(rowKey, d, '1');
+          else if (v===0.5||v==='0.5') set(rowKey, d, '0.5');
+        });
+      }
+      render(); toast('Import réussi !');
+    } catch(err) { toast('Erreur lors de l\'import', true); }
+    evt.target.value = '';
   };
   reader.readAsArrayBuffer(file);
 }
 
 render();
 </script>
+</body>
+</html>
