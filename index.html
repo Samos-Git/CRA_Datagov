@@ -2,75 +2,74 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 .cra{padding:1rem 0;}
-.top-bar{display:flex;align-items:center;gap:12px;margin-bottom:1rem;flex-wrap:wrap;}
+.top-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
 .top-bar input{padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);}
 .top-bar input:focus{outline:none;border-color:#1D9E75;}
-.collab-input{min-width:180px;flex:1;max-width:240px;}
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:10px;}
-.header-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.title{font-size:18px;font-weight:500;color:var(--color-text-primary);}
+.collab-input{min-width:180px;flex:1;max-width:260px;}
+.divider{height:22px;width:0.5px;background:var(--color-border-tertiary);}
 .month-nav{display:flex;align-items:center;gap:6px;}
 .month-nav button{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:4px 10px;cursor:pointer;color:var(--color-text-primary);font-size:13px;}
 .month-nav button:hover{background:var(--color-background-secondary);}
-.month-label{font-size:15px;font-weight:500;min-width:150px;text-align:center;color:var(--color-text-primary);}
-.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.btn{padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;font-size:13px;background:transparent;color:var(--color-text-primary);display:flex;align-items:center;gap:6px;}
+.month-label{font-size:14px;font-weight:500;min-width:140px;text-align:center;color:var(--color-text-primary);}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px;}
+.toolbar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.toolbar-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.btn{padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;font-size:13px;background:transparent;color:var(--color-text-primary);display:inline-flex;align-items:center;gap:5px;}
 .btn:hover{background:var(--color-background-secondary);}
 .btn-green{background:#0F6E56;border-color:#0F6E56;color:#fff;}
-.btn-green:hover{background:#085041;border-color:#085041;}
+.btn-green:hover{background:#085041;}
 .btn-blue{background:#185FA5;border-color:#185FA5;color:#fff;}
-.btn-blue:hover{background:#0C447C;border-color:#0C447C;}
-.add-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;}
-.add-row input{padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);min-width:200px;flex:1;max-width:280px;}
-.add-row input:focus{outline:none;border-color:#1D9E75;}
+.btn-blue:hover{background:#0C447C;}
+.act-input{padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;background:var(--color-background-primary);color:var(--color-text-primary);width:220px;}
+.act-input:focus{outline:none;border-color:#1D9E75;}
 .table-wrap{overflow-x:auto;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px;}
 thead th{background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500;font-size:11px;padding:7px 3px;text-align:center;border-bottom:0.5px solid var(--color-border-tertiary);position:sticky;top:0;z-index:2;}
-thead th:first-child{text-align:left;padding-left:10px;min-width:150px;position:sticky;left:0;z-index:3;background:var(--color-background-secondary);}
+thead th.act-col{text-align:left;padding-left:8px;min-width:170px;position:sticky;left:0;z-index:3;background:var(--color-background-secondary);}
 .dh{display:flex;flex-direction:column;align-items:center;gap:1px;}
 .dn{font-size:9px;color:var(--color-text-tertiary);}
-.dd{font-size:12px;font-weight:500;}
-.we-hd{opacity:.45;}
+.dd{font-size:11px;font-weight:500;}
+.we-th{opacity:.4;}
 tbody tr{border-bottom:0.5px solid var(--color-border-tertiary);}
 tbody tr:last-child{border-bottom:none;}
-td:first-child{padding:5px 6px 5px 10px;font-size:13px;color:var(--color-text-primary);font-weight:500;position:sticky;left:0;background:var(--color-background-primary);z-index:1;border-right:0.5px solid var(--color-border-tertiary);}
-.lbl-conge{color:#0F6E56;}
-.lbl-rtt{color:#185FA5;}
-.lbl-flex{display:flex;align-items:center;justify-content:space-between;}
-.del-btn{background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);font-size:14px;padding:0 2px;opacity:0;transition:opacity .15s;}
-tbody tr:hover .del-btn{opacity:1;}
-.del-btn:hover{color:#E24B4A;}
-td.dc{padding:3px 2px;text-align:center;vertical-align:middle;}
+td.act-col{padding:5px 6px 5px 8px;font-size:12px;color:var(--color-text-primary);font-weight:500;position:sticky;left:0;background:var(--color-background-primary);z-index:1;border-right:0.5px solid var(--color-border-tertiary);min-width:170px;}
+.lbl-row{display:flex;align-items:center;justify-content:space-between;gap:4px;}
+.lbl-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.del-btn{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:4px;cursor:pointer;color:#A32D2D;font-size:11px;padding:2px 5px;display:inline-flex;align-items:center;flex-shrink:0;line-height:1;}
+.del-btn:hover{background:#F7C1C1;}
+.lbl-conge{color:#085041;}
+.lbl-rtt{color:#0C447C;}
+td.dc{padding:2px 2px;text-align:center;vertical-align:middle;}
 td.dc.we{background:var(--color-background-tertiary);}
-select.cs{width:46px;padding:2px 1px;border:0.5px solid transparent;border-radius:4px;text-align:center;font-size:12px;cursor:pointer;appearance:none;background:transparent;color:var(--color-text-primary);transition:border-color .12s,background .12s;}
+select.cs{width:44px;padding:2px 0;border:0.5px solid transparent;border-radius:4px;text-align:center;font-size:11px;cursor:pointer;appearance:none;background:transparent;color:var(--color-text-primary);}
 select.cs:hover,select.cs:focus{border-color:var(--color-border-secondary);background:var(--color-background-secondary);outline:none;}
-select.cs.v1{background:#e1f5ee;color:#0F6E56;border-color:#9FE1CB;}
-select.cs.vh{background:#e6f1fb;color:#185FA5;border-color:#B5D4F4;}
-select.cs.vc{background:#e1f5ee;color:#0F6E56;border-color:#9FE1CB;}
-select.cs.vr{background:#faeeda;color:#854F0B;border-color:#FAC775;}
+select.cs.v1{background:#e1f5ee;color:#085041;border-color:#9FE1CB;}
+select.cs.vh{background:#e6f1fb;color:#0C447C;border-color:#B5D4F4;}
+select.cs.vc{background:#e1f5ee;color:#085041;border-color:#9FE1CB;}
+select.cs.vr{background:#faeeda;color:#633806;border-color:#FAC775;}
 .sep-row td{height:2px;background:var(--color-border-tertiary);padding:0;}
-.sep-row td:first-child{background:var(--color-border-tertiary);}
-.tot-row td{background:var(--color-background-secondary);font-weight:500;font-size:11px;}
-.tot-row td:first-child{color:var(--color-text-secondary);font-size:11px;}
-td.tc{color:var(--color-text-primary);font-size:12px;font-weight:500;}
-td.tc.over{color:#E24B4A;}td.tc.ok{color:#0F6E56;}td.tc.blu{color:#185FA5;}td.tc.amb{color:#854F0B;}
-.summary{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap;}
-.sc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;flex:1;min-width:110px;}
+.sep-row td.act-col{background:var(--color-border-tertiary);}
+.tot-row td{background:var(--color-background-secondary);font-size:11px;font-weight:500;color:var(--color-text-secondary);}
+.tot-row td.act-col{color:var(--color-text-secondary);}
+td.tc{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+td.tc.over{color:#A32D2D;}td.tc.ok{color:#085041;}td.tc.blu{color:#0C447C;}td.tc.amb{color:#633806;}
+.summary{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;}
+.sc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;flex:1;min-width:100px;}
 .sc .sl{font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;}
-.sc .sv{font-size:20px;font-weight:500;color:var(--color-text-primary);}
-.sv.green{color:#0F6E56;}.sv.blue{color:#185FA5;}.sv.amber{color:#854F0B;}.sv.red{color:#E24B4A;}
-.toast{position:absolute;top:-40px;left:50%;transform:translateX(-50%);background:#0F6E56;color:#fff;padding:6px 14px;border-radius:var(--border-radius-md);font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+.sc .sv{font-size:18px;font-weight:500;color:var(--color-text-primary);}
+.sv.green{color:#085041;}.sv.blue{color:#0C447C;}.sv.amber{color:#633806;}.sv.red{color:#A32D2D;}
+.toast{display:inline-block;margin-left:12px;background:#e1f5ee;color:#085041;border:0.5px solid #9FE1CB;padding:4px 10px;border-radius:var(--border-radius-md);font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.err{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1;}
 .toast.show{opacity:1;}
-.import-wrap{position:relative;}
 </style>
 
-<h2 class="sr-only">Application CRA — Gestion des activités et congés</h2>
+<h2 class="sr-only">CRA — Compte Rendu d'Activité</h2>
+<div class="cra">
 
-<div class="cra" style="position:relative;">
   <div class="top-bar">
-    <i class="ti ti-user" aria-hidden="true" style="font-size:16px;color:var(--color-text-secondary);"></i>
-    <input class="collab-input" type="text" id="collabName" placeholder="Nom du collaborateur..." oninput="updateTitle()" />
-    <div style="height:24px;width:0.5px;background:var(--color-border-tertiary);"></div>
+    <i class="ti ti-user" aria-hidden="true" style="font-size:15px;color:var(--color-text-secondary);"></i>
+    <input class="collab-input" type="text" id="collabName" placeholder="Nom du collaborateur..." oninput="updateSummary()" />
+    <div class="divider"></div>
     <div class="month-nav">
       <button onclick="changeMonth(-1)">‹</button>
       <span class="month-label" id="monthLabel"></span>
@@ -78,26 +77,21 @@ td.tc.over{color:#E24B4A;}td.tc.ok{color:#0F6E56;}td.tc.blu{color:#185FA5;}td.tc
     </div>
   </div>
 
-  <div class="header">
-    <div class="header-left">
-      <div class="add-row" style="margin-bottom:0;">
-        <input type="text" id="newAct" placeholder="Nom du projet / activité..." onkeydown="if(event.key==='Enter')addActivity()" />
-        <button class="btn" onclick="addActivity()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter</button>
-      </div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="act-input" type="text" id="newAct" placeholder="Nouvelle activité / projet..." onkeydown="if(event.key==='Enter')addActivity()" />
+      <button class="btn" onclick="addActivity()"><i class="ti ti-plus" aria-hidden="true"></i> Ajouter</button>
+      <span class="toast" id="toast"></span>
     </div>
-    <div class="header-right">
-      <div class="import-wrap">
-        <button class="btn btn-blue" onclick="document.getElementById('fileInput').click()"><i class="ti ti-upload" aria-hidden="true"></i> Importer Excel</button>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)" />
-      </div>
-      <button class="btn btn-green" onclick="exportExcel()"><i class="ti ti-download" aria-hidden="true"></i> Exporter Excel</button>
+    <div class="toolbar-right">
+      <button class="btn btn-blue" onclick="document.getElementById('fileIn').click()"><i class="ti ti-upload" aria-hidden="true"></i> Importer</button>
+      <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)" />
+      <button class="btn btn-green" onclick="exportExcel()"><i class="ti ti-download" aria-hidden="true"></i> Exporter</button>
     </div>
   </div>
 
-  <div id="toastMsg" class="toast"></div>
-
   <div class="table-wrap">
-    <table id="craTable">
+    <table>
       <thead id="tHead"></thead>
       <tbody id="tBody"></tbody>
     </table>
@@ -110,119 +104,136 @@ td.tc.over{color:#E24B4A;}td.tc.ok{color:#0F6E56;}td.tc.blu{color:#185FA5;}td.tc
 const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const DAYS=['dim','lun','mar','mer','jeu','ven','sam'];
 let year=new Date().getFullYear(), month=new Date().getMonth();
-let activities=['Projet Alpha','Projet Beta','Interne / Admin'];
+let activities=[];
 let data={};
 
-function k(row,col){return `${year}-${month}-${row}-${col}`;}
-function daysInMonth(y,m){return new Date(y,m+1,0).getDate();}
-function isWE(y,m,d){const w=new Date(y,m,d).getDay();return w===0||w===6;}
+function k(row,col){return `${year}|${month}|${row}|${col}`;}
+function daysInM(y,m){return new Date(y,m+1,0).getDate();}
+function isWE(d){const w=new Date(year,month,d).getDay();return w===0||w===6;}
 function get(row,col){return data[k(row,col)]||'';}
-function set(row,col,val){const key=k(row,col);if(val==='')delete data[key];else data[key]=val;updateSummary();}
+function set(row,col,val){const ky=k(row,col);if(val==='')delete data[ky];else data[ky]=val;updateSummary();}
 
-function cls(v,we){if(we)return '';if(v==='1')return 'v1';if(v==='0.5')return 'vh';return '';}
-function clsConge(v,we){if(we)return '';if(v==='1'||v==='0.5')return 'vc';return '';}
-function clsRtt(v,we){if(we)return '';if(v==='1'||v==='0.5')return 'vr';return '';}
-
-function showToast(msg,color='#0F6E56'){
-  const t=document.getElementById('toastMsg');
-  t.textContent=msg;t.style.background=color;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+function vCls(v,type){
+  if(type==='act'){return v==='1'?'v1':v==='0.5'?'vh':'';}
+  if(type==='conge'){return(v==='1'||v==='0.5')?'vc':'';}
+  if(type==='rtt'){return(v==='1'||v==='0.5')?'vr':'';}
+  return '';
 }
 
-function updateTitle(){
-  document.getElementById('monthLabel').textContent=`${MONTHS[month]} ${year}`;
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(err?' err':'')+' show';
+  setTimeout(()=>t.classList.remove('show'),2200);
 }
 
-function changeMonth(d){
-  month+=d;if(month>11){month=0;year++;}if(month<0){month=11;year--;}
-  render();
-}
+function changeMonth(d){month+=d;if(month>11){month=0;year++;}if(month<0){month=11;year--;}render();}
 
 function addActivity(){
-  const i=document.getElementById('newAct');const v=i.value.trim();
-  if(!v)return;if(!activities.includes(v))activities.push(v);
-  render();i.value='';
+  const inp=document.getElementById('newAct');
+  const v=inp.value.trim();
+  if(!v){toast('Saisissez un nom d\'activité',true);return;}
+  if(activities.includes(v)){toast('Activité déjà existante',true);return;}
+  activities.push(v);render();inp.value='';toast('Activité ajoutée');
 }
 
-function removeActivity(i){activities.splice(i,1);render();}
+function removeActivity(i){
+  const name=activities[i];
+  activities.splice(i,1);
+  const days=daysInM(year,month);
+  for(let d=1;d<=days;d++) delete data[k(i,d)];
+  activities.forEach((_,ni)=>{
+    if(ni>=i){
+      for(let d=1;d<=days;d++){
+        const oldKey=k(ni+1,d), newKey=k(ni,d);
+        if(data[oldKey]!==undefined){data[newKey]=data[oldKey];delete data[oldKey];}
+        else delete data[newKey];
+      }
+    }
+  });
+  render();toast(`"${name}" supprimée`);
+}
 
-function selOpts(v,we,type){
-  if(we)return `<option value="">—</option>`;
-  let o=`<option value="">—</option><option value="1"${v==='1'?' selected':''}>1</option><option value="0.5"${v==='0.5'?' selected':''}>0.5</option>`;
-  return o;
+function makeSelect(rowKey,d,type){
+  const v=get(rowKey,d);
+  const c=vCls(v,type);
+  return `<select class="cs ${c}" onchange="set('${rowKey}',${d},this.value);updateCellCls(this,'${type}')">`
+    +`<option value="">—</option>`
+    +`<option value="1"${v==='1'?' selected':''}>1</option>`
+    +`<option value="0.5"${v==='0.5'?' selected':''}>0.5</option>`
+    +`</select>`;
+}
+
+function updateCellCls(sel,type){
+  sel.className='cs '+vCls(sel.value,type);
 }
 
 function render(){
-  const days=daysInMonth(year,month);
   document.getElementById('monthLabel').textContent=`${MONTHS[month]} ${year}`;
+  const days=daysInM(year,month);
 
-  let h=`<tr><th>Activité / Jour</th>`;
+  let h=`<tr><th class="act-col">Activité / Jour</th>`;
   for(let d=1;d<=days;d++){
-    const we=isWE(year,month,d);
-    const dow=DAYS[new Date(year,month,d).getDay()];
-    h+=`<th class="${we?'we-hd':''}"><div class="dh"><span class="dn">${dow}</span><span class="dd">${d}</span></div></th>`;
+    const we=isWE(d);
+    h+=`<th class="${we?'we-th':''}"><div class="dh"><span class="dn">${DAYS[new Date(year,month,d).getDay()]}</span><span class="dd">${d}</span></div></th>`;
   }
-  h+=`<th style="min-width:46px;padding:0 6px;">Total</th></tr>`;
+  h+=`<th style="min-width:44px;padding:0 4px;">Tot.</th></tr>`;
   document.getElementById('tHead').innerHTML=h;
 
   let b='';
   activities.forEach((act,i)=>{
-    b+=`<tr><td><div class="lbl-flex"><span>${act}</span><button class="del-btn" onclick="removeActivity(${i})" title="Supprimer"><i class="ti ti-x"></i></button></div></td>`;
+    b+=`<tr><td class="act-col"><div class="lbl-row"><span class="lbl-text" title="${act}">${act}</span>`
+      +`<button class="del-btn" onclick="removeActivity(${i})" title="Supprimer cette activité"><i class="ti ti-trash" aria-hidden="true" style="font-size:11px;"></i> Suppr.</button>`
+      +`</div></td>`;
     let tot=0;
     for(let d=1;d<=days;d++){
-      const we=isWE(year,month,d);const v=get(i,d);
+      const we=isWE(d);const v=get(i,d);
       if(v==='1')tot+=1;else if(v==='0.5')tot+=0.5;
-      const c=cls(v,we);
-      b+=`<td class="dc${we?' we':''}"><select class="cs ${c}" ${we?'disabled':''} onchange="set(${i},${d},this.value);this.className='cs '+getCls(this.value,${we},'act')">${selOpts(v,we,'act')}</select></td>`;
+      b+=`<td class="dc${we?' we':''}">${we?'<span style="color:var(--color-text-tertiary);font-size:10px;">·</span>':makeSelect(i,d,'act')}</td>`;
     }
-    b+=`<td class="tc">${tot>0?tot:''}</td></tr>`;
+    b+=`<td class="tc">${tot||''}</td></tr>`;
   });
 
-  b+=`<tr class="sep-row"><td colspan="${days+2}"></td></tr>`;
+  if(activities.length===0){
+    b+=`<tr><td class="act-col" colspan="${days+2}" style="color:var(--color-text-tertiary);font-size:12px;padding:12px 10px;">Aucune activité — ajoutez-en une ci-dessus</td></tr>`;
+  }
 
-  ['conge','rtt'].forEach(type=>{
-    const label=type==='conge'?'<i class="ti ti-beach" aria-hidden="true" style="font-size:13px;margin-right:5px;vertical-align:-2px;"></i>Congés payés':'<i class="ti ti-sun" aria-hidden="true" style="font-size:13px;margin-right:5px;vertical-align:-2px;"></i>RTT';
-    b+=`<tr><td class="lbl-${type==='conge'?'conge':'rtt'}">${label}</td>`;
+  b+=`<tr class="sep-row"><td class="act-col" colspan="${days+2}"></td></tr>`;
+
+  const special=[
+    {key:'conge',label:'<i class="ti ti-beach" aria-hidden="true" style="font-size:12px;margin-right:4px;vertical-align:-1px;"></i>Congés payés',cls:'lbl-conge',type:'conge',tcls:'ok'},
+    {key:'rtt',label:'<i class="ti ti-sun" aria-hidden="true" style="font-size:12px;margin-right:4px;vertical-align:-1px;"></i>RTT',cls:'lbl-rtt',type:'rtt',tcls:'blu'}
+  ];
+  special.forEach(({key,label,cls,type,tcls})=>{
+    b+=`<tr><td class="act-col ${cls}">${label}</td>`;
     let tot=0;
     for(let d=1;d<=days;d++){
-      const we=isWE(year,month,d);const v=get(type,d);
+      const we=isWE(d);const v=get(key,d);
       if(v==='1')tot+=1;else if(v==='0.5')tot+=0.5;
-      const c=type==='conge'?clsConge(v,we):clsRtt(v,we);
-      b+=`<td class="dc${we?' we':''}"><select class="cs ${c}" ${we?'disabled':''} onchange="set('${type}',${d},this.value);this.className='cs '+getCls(this.value,${we},'${type}')">${selOpts(v,we,type)}</select></td>`;
+      b+=`<td class="dc${we?' we':''}">${we?'<span style="color:var(--color-text-tertiary);font-size:10px;">·</span>':makeSelect(key,d,type)}</td>`;
     }
-    const tc=type==='conge'?'ok':'blu';
-    b+=`<td class="tc ${tot>0?tc:''}">${tot>0?tot:''}</td></tr>`;
+    b+=`<td class="tc ${tot?tcls:''}">${tot||''}</td></tr>`;
   });
 
-  b+=`<tr class="tot-row"><td>Total / jour</td>`;
+  b+=`<tr class="tot-row"><td class="act-col">Total / jour</td>`;
   let grand=0;
   for(let d=1;d<=days;d++){
-    const we=isWE(year,month,d);
+    if(isWE(d)){b+=`<td class="dc we"></td>`;continue;}
     let s=0;
     activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
     ['conge','rtt'].forEach(r=>{const v=get(r,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
     grand+=s;
-    const c=s>1?'over':s===1?'ok':'';
-    b+=`<td class="dc tc ${c}">${we?'':s>0?s:''}</td>`;
+    b+=`<td class="dc tc ${s>1?'over':s===1?'ok':''}">${s||''}</td>`;
   }
-  b+=`<td class="tc">${grand>0?grand:''}</td></tr>`;
+  b+=`<td class="tc">${grand||''}</td></tr>`;
   document.getElementById('tBody').innerHTML=b;
   updateSummary();
 }
 
-function getCls(v,we,type){
-  if(we)return '';
-  if(type==='act')return cls(v,we);
-  if(type==='conge')return clsConge(v,we);
-  if(type==='rtt')return clsRtt(v,we);
-  return '';
-}
-
 function updateSummary(){
-  const days=daysInMonth(year,month);
+  const days=daysInM(year,month);
   let worked=0,conge=0,rtt=0,ouvres=0;
   for(let d=1;d<=days;d++){
-    if(!isWE(year,month,d))ouvres++;
+    if(!isWE(d))ouvres++;
     const c=get('conge',d);if(c==='1')conge+=1;else if(c==='0.5')conge+=0.5;
     const r=get('rtt',d);if(r==='1')rtt+=1;else if(r==='0.5')rtt+=0.5;
     let s=0;activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
@@ -231,11 +242,11 @@ function updateSummary(){
   const total=worked+conge+rtt;
   const diff=total-ouvres;
   const dc=diff>0.05?'red':diff<-0.05?'amber':'green';
-  const name=document.getElementById('collabName').value.trim();
+  const name=document.getElementById('collabName').value.trim()||'Collaborateur';
   document.getElementById('summary').innerHTML=`
-    <div class="sc"><div class="sl">${name?name:'Collaborateur'}</div><div class="sv" style="font-size:14px;color:var(--color-text-secondary);">${MONTHS[month]} ${year}</div></div>
+    <div class="sc"><div class="sl">Collaborateur</div><div class="sv" style="font-size:13px;color:var(--color-text-secondary);">${name}</div><div class="sl" style="margin-top:2px;">${MONTHS[month]} ${year}</div></div>
     <div class="sc"><div class="sl">Jours ouvrés</div><div class="sv">${ouvres}</div></div>
-    <div class="sc"><div class="sl">Jours travaillés</div><div class="sv green">${worked}</div></div>
+    <div class="sc"><div class="sl">Travaillés</div><div class="sv green">${worked}</div></div>
     <div class="sc"><div class="sl">Congés</div><div class="sv green">${conge}</div></div>
     <div class="sc"><div class="sl">RTT</div><div class="sv blue">${rtt}</div></div>
     <div class="sc"><div class="sl">Total imputé</div><div class="sv ${dc}">${total} / ${ouvres}</div></div>
@@ -243,48 +254,41 @@ function updateSummary(){
 }
 
 function exportExcel(){
-  const days=daysInMonth(year,month);
+  const days=daysInM(year,month);
   const name=document.getElementById('collabName').value.trim()||'Collaborateur';
   const wb=XLSX.utils.book_new();
   const rows=[];
-
   rows.push([`CRA — ${name} — ${MONTHS[month]} ${year}`]);
   rows.push([]);
-
   const hRow=['Activité / Jour'];
-  for(let d=1;d<=days;d++) hRow.push(isWE(year,month,d)?`(${d})`:`${d}`);
+  for(let d=1;d<=days;d++) hRow.push(isWE(d)?`(${d})`:`${d}`);
   hRow.push('Total');
   rows.push(hRow);
-
   activities.forEach((act,i)=>{
     const row=[act];let tot=0;
-    for(let d=1;d<=days;d++){const v=get(i,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n!==null?n:'');}
+    for(let d=1;d<=days;d++){const v=get(i,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n??'');}
     row.push(tot||'');rows.push(row);
   });
-
   rows.push([]);
-
   ['conge','rtt'].forEach(type=>{
     const row=[type==='conge'?'Congés payés':'RTT'];let tot=0;
-    for(let d=1;d<=days;d++){const v=get(type,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n!==null?n:'');}
+    for(let d=1;d<=days;d++){const v=get(type,d);const n=v==='1'?1:v==='0.5'?0.5:null;if(n)tot+=n;row.push(n??'');}
     row.push(tot||'');rows.push(row);
   });
-
-  const totRow=['Total / jour'];let grand=0;
+  const tRow=['Total / jour'];let grand=0;
   for(let d=1;d<=days;d++){
-    if(isWE(year,month,d)){totRow.push('');continue;}
+    if(isWE(d)){tRow.push('');continue;}
     let s=0;
     activities.forEach((_,i)=>{const v=get(i,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
     ['conge','rtt'].forEach(r=>{const v=get(r,d);if(v==='1')s+=1;else if(v==='0.5')s+=0.5;});
-    grand+=s;totRow.push(s||'');
+    grand+=s;tRow.push(s||'');
   }
-  totRow.push(grand||'');rows.push(totRow);
-
+  tRow.push(grand||'');rows.push(tRow);
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:24},...Array(days).fill({wch:5}),{wch:7}];
   XLSX.utils.book_append_sheet(wb,ws,`${MONTHS[month]} ${year}`);
   XLSX.writeFile(wb,`CRA_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`);
-  showToast('Export réussi !');
+  toast('Export réussi !');
 }
 
 function importExcel(evt){
@@ -295,54 +299,35 @@ function importExcel(evt){
       const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(!rows||rows.length<3){showToast('Fichier non reconnu','#E24B4A');return;}
-
-      const titleRow=(rows[0][0]||'').toString();
-      const namMatch=titleRow.match(/CRA\s*—\s*(.+?)\s*—/);
-      const monMatch=titleRow.match(/—\s*([^\s—]+)\s+(\d{4})$/);
-      if(namMatch)document.getElementById('collabName').value=namMatch[1].trim();
-      if(monMatch){
-        const mi=MONTHS.indexOf(monMatch[1].trim());
-        if(mi>=0)month=mi;
-        year=parseInt(monMatch[2])||year;
-      }
-
+      if(!rows||rows.length<3){toast('Fichier non reconnu',true);return;}
+      const title=(rows[0][0]||'').toString();
+      const nm=title.match(/CRA\s*—\s*(.+?)\s*—/);
+      const mo=title.match(/—\s*([^\s—]+)\s+(\d{4})$/);
+      if(nm)document.getElementById('collabName').value=nm[1].trim();
+      if(mo){const mi=MONTHS.indexOf(mo[1].trim());if(mi>=0)month=mi;year=parseInt(mo[2])||year;}
       data={};activities=[];
-      let headerRowIdx=-1;
-      for(let r=0;r<rows.length;r++){
-        if(rows[r][0]==='Activité / Jour'){headerRowIdx=r;break;}
-      }
-      if(headerRowIdx<0){showToast('Fichier non reconnu','#E24B4A');return;}
-
-      const days=daysInMonth(year,month);
+      let hIdx=-1;
+      for(let r=0;r<rows.length;r++){if((rows[r][0]||'').toString()==='Activité / Jour'){hIdx=r;break;}}
+      if(hIdx<0){toast('Format non reconnu',true);return;}
+      const days=daysInM(year,month);
       const colMap={};
-      const hRow=rows[headerRowIdx];
-      for(let c=1;c<hRow.length-1;c++){
-        const v=(hRow[c]||'').toString().replace(/[()]/g,'');
-        const d=parseInt(v);
-        if(d>=1&&d<=days)colMap[c]=d;
-      }
-
-      for(let r=headerRowIdx+1;r<rows.length;r++){
-        const row=rows[r];
-        const label=(row[0]||'').toString().trim();
+      rows[hIdx].forEach((v,c)=>{if(c===0)return;const d=parseInt((v||'').toString().replace(/[()]/g,''));if(d>=1&&d<=days)colMap[c]=d;});
+      for(let r=hIdx+1;r<rows.length;r++){
+        const row=rows[r];const label=(row[0]||'').toString().trim();
         if(!label)continue;
-        let rowKey=null;
+        let rowKey;
         if(label==='Congés payés')rowKey='conge';
         else if(label==='RTT')rowKey='rtt';
         else if(label==='Total / jour')break;
         else{activities.push(label);rowKey=activities.length-1;}
-        for(let c=1;c<row.length-1;c++){
-          const d=colMap[c];if(!d)continue;
-          const v=row[c];
+        Object.entries(colMap).forEach(([c,d])=>{
+          const v=row[parseInt(c)];
           if(v===1||v==='1')set(rowKey,d,'1');
           else if(v===0.5||v==='0.5')set(rowKey,d,'0.5');
-        }
+        });
       }
-
-      render();
-      showToast(`Fichier importé avec succès !`);
-    }catch(err){showToast('Erreur lors de l\'import','#E24B4A');}
+      render();toast('Import réussi !');
+    }catch(err){toast('Erreur lors de l\'import',true);}
     evt.target.value='';
   };
   reader.readAsArrayBuffer(file);
