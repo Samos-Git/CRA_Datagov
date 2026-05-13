@@ -6,6 +6,8 @@
 <title>CRA — Compte Rendu d'Activité</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <style>
 :root {
   --bg: #F7F6F3;
@@ -258,7 +260,7 @@ td.tc.amb  { color: var(--amber); }
       Importer Excel
     </button>
     <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(event)" />
-    <button class="btn btn-primary" onclick="exportExcel()">
+    <button class="btn btn-primary" onclick="exportExcel().catch(e=>{ console.error(e); toast('Erreur export', true); })">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exporter Excel
     </button>
@@ -663,13 +665,13 @@ function updateSummary() {
   `;
 }
 
-// ── EXPORT EXCEL (mise en forme complète) ──────────────────────────────────
-function exportExcel() {
+// ── EXPORT EXCEL avec ExcelJS (mise en forme complète) ──────────────────────
+async function exportExcel() {
   const days    = daysInM(year, month);
   const societe = document.getElementById('societeInput').value.trim() || 'Société';
   const name    = document.getElementById('collabInput').value.trim()  || 'Collaborateur';
 
-  // Calcul des stats (même logique que updateSummary)
+  // Calcul des stats
   let worked = 0, conge = 0, rtt = 0, ouvres = 0, nbFeries = 0;
   for (let d = 1; d <= days; d++) {
     if (!isWE(d)) {
@@ -683,258 +685,264 @@ function exportExcel() {
     worked += s;
   }
   const totalImpute = worked + conge + rtt;
+  const diff = totalImpute - ouvres;
 
-  // ── Palettes de couleurs (ARGB hex pour SheetJS) ──
-  const C = {
-    white:       'FFFFFFFF',
-    bgPage:      'FFF7F6F3',
-    bgSurface2:  'FFF0EEE9',
-    bgWE:        'FFEDEBE5',
-    bgFerie:     'FFDFE0DC',
-    bgGrey:      'FFD4D5D1',
-    bgFerieUnlk: 'FFEAF5EE',
-    bgGreen:     'FFE8F5EE',
-    bgBlue:      'FFE6F0F8',
-    bgAmber:     'FFFBF0DC',
-    bgRed:       'FFFBEAEA',
-    bgTotRow:    'FFF0EEE9',
-    bgTitleRow:  'FF1D6B4E',   // vert foncé pour titre
-    bgHeaderDay: 'FFF0EEE9',
-    txtWhite:    'FFFFFFFF',
-    txtDark:     'FF1A1917',
-    txtMuted:    'FF6B6760',
-    txtLight:    'FFA5A29C',
-    txtGreen:    'FF1D6B4E',
-    txtBlue:     'FF1A4F7A',
-    txtAmber:    'FF7A4A0E',
-    txtRed:      'FF8B2020',
-    borderColor: 'FFE2DED7',
+  // ── Palette ──
+  const P = {
+    title:    '1D6B4E', titleTxt: 'FFFFFF',
+    header:   'F0EEE9', headerTxt:'6B6760',
+    we:       'EDEBE5', weTxt:    'A5A29C',
+    ferie:    'DFE0DC', ferieTxt: 'A5A29C',
+    grey:     'D4D5D1', greyTxt:  'A5A29C',
+    unlock:   'EAF5EE', unlockTxt:'1D6B4E',
+    green:    'E8F5EE', greenTxt: '1D6B4E',
+    blue:     'E6F0F8', blueTxt:  '1A4F7A',
+    amber:    'FBF0DC', amberTxt: '7A4A0E',
+    red:      'FBEAEA', redTxt:   '8B2020',
+    totRow:   'F0EEE9', totTxt:   '6B6760',
+    white:    'FFFFFF', darkTxt:  '1A1917',
+    mutedTxt: '6B6760', lightTxt: 'A5A29C',
+    border:   'E2DED7',
   };
 
-  // Helper : crée un style de cellule SheetJS
-  function sty(opts = {}) {
-    const s = {};
-    if (opts.bg)   s.fill = { patternType: 'solid', fgColor: { rgb: opts.bg } };
-    if (opts.bold || opts.color || opts.sz || opts.italic) {
-      s.font = {};
-      if (opts.bold)   s.font.bold = true;
-      if (opts.italic) s.font.italic = true;
-      if (opts.color)  s.font.color = { rgb: opts.color };
-      if (opts.sz)     s.font.sz = opts.sz;
-      if (opts.name)   s.font.name = opts.name;
-    }
-    if (opts.center) s.alignment = { horizontal: 'center', vertical: 'center', wrapText: !!opts.wrap };
-    if (opts.left)   s.alignment = { horizontal: 'left',   vertical: 'center', wrapText: !!opts.wrap };
-    if (opts.right)  s.alignment = { horizontal: 'right',  vertical: 'center' };
-    if (opts.border) {
-      const b = { style: 'thin', color: { rgb: C.borderColor } };
-      s.border = { top: b, bottom: b, left: b, right: b };
-    }
-    return s;
+  // ── ExcelJS helpers ──
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CRA App'; wb.created = new Date();
+  const ws = wb.addWorksheet(`${MONTHS[month]} ${year}`, {
+    views: [{ showGridLines: false }]
+  });
+
+  const FONT = 'Calibri';
+  const totalCols = 1 + days + 1;
+
+  // Largeurs colonnes
+  ws.getColumn(1).width = 26;
+  for (let d = 1; d <= days; d++) ws.getColumn(d + 1).width = 5.2;
+  ws.getColumn(totalCols).width = 7;
+
+  function hexToArgb(hex) { return 'FF' + hex.toUpperCase(); }
+
+  function cellStyle(bg, txtColor, opts = {}) {
+    return {
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(bg) } },
+      font: { name: FONT, bold: !!opts.bold, size: opts.size || 10, color: { argb: hexToArgb(txtColor) }, italic: !!opts.italic },
+      alignment: { horizontal: opts.h || 'center', vertical: 'middle', wrapText: !!opts.wrap },
+      border: opts.border === false ? {} : {
+        top:    { style: 'thin', color: { argb: hexToArgb(P.border) } },
+        bottom: { style: 'thin', color: { argb: hexToArgb(P.border) } },
+        left:   { style: 'thin', color: { argb: hexToArgb(P.border) } },
+        right:  { style: 'thin', color: { argb: hexToArgb(P.border) } },
+      }
+    };
   }
 
-  // Helper : encode une cellule
-  function cell(v, style) {
-    const t = typeof v === 'number' ? 'n' : 's';
-    const c = { v, t, s: style };
-    if (t === 'n' && style && style.numFmt) c.z = style.numFmt;
-    return c;
-  }
-  function numCell(v, style) { return { v, t: 'n', s: style }; }
-  function emptyCell(style)  { return { v: '', t: 's', s: style }; }
-
-  // ── Construction de la feuille ──
-  const wb = XLSX.utils.book_new();
-  const ws = {};
-  let curRow = 0; // index ligne (0-based)
-
-  const totalCols = 1 + days + 1; // label + jours + total
-  const lastCol   = totalCols - 1;
-
-  // Encode "A1" style depuis row/col (0-based)
-  function addr(r, c) {
-    let col = '';
-    let n = c + 1;
-    while (n > 0) { col = String.fromCharCode(65 + ((n-1) % 26)) + col; n = Math.floor((n-1) / 26); }
-    return col + (r + 1);
+  function setCell(row, col, value, bg, txtColor, opts = {}) {
+    const cell = ws.getCell(row, col);
+    cell.value = value !== null && value !== '' ? value : null;
+    Object.assign(cell, cellStyle(bg, txtColor, opts));
+    return cell;
   }
 
-  function setCell(r, c, cellObj) { ws[addr(r, c)] = cellObj; }
+  function fillRow(row, bg, from = 1, to = totalCols) {
+    for (let c = from; c <= to; c++) setCell(row, c, null, bg, P.mutedTxt, { border: false });
+  }
+
+  function dayCellStyle(d) {
+    const st = dayStatus(d);
+    if (st === 'grey')           return [P.grey,   P.greyTxt];
+    if (st === 'ferie')          return [P.ferie,  P.ferieTxt];
+    if (st === 'we')             return [P.we,     P.weTxt];
+    if (st === 'ferie-unlocked') return [P.unlock, P.unlockTxt];
+    return [P.white, P.mutedTxt];
+  }
+
+  let R = 1; // ligne courante (1-indexed pour ExcelJS)
 
   // ── LIGNE 1 : Titre ──────────────────────────────────────────────────────
-  setCell(curRow, 0, cell(`CRA — ${societe} — ${name} — ${MONTHS[month]} ${year}`,
-    sty({ bg: C.bgTitleRow, bold: true, color: C.txtWhite, sz: 13, left: true, border: false })));
-  for (let c = 1; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgTitleRow })));
-  ws['!merges'] = ws['!merges'] || [];
-  ws['!merges'].push({ s: {r: curRow, c: 0}, e: {r: curRow, c: lastCol} });
-  curRow++;
+  ws.getRow(R).height = 22;
+  fillRow(R, P.title);
+  const titleCell = ws.getCell(R, 1);
+  titleCell.value = `CRA  —  ${societe}  —  ${name}  —  ${MONTHS[month]} ${year}`;
+  titleCell.font  = { name: FONT, bold: true, size: 13, color: { argb: hexToArgb(P.titleTxt) } };
+  titleCell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(P.title) } };
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.mergeCells(R, 1, R, totalCols);
+  R++;
 
-  // ── LIGNE 2 : Métadonnées (cachée mais lisible pour import) ───────────────
+  // ── LIGNE 2 : méta import (police blanche sur blanc = invisible) ─────────
   const greyArr   = [...getGreyed()].sort((a,b)=>a-b);
   const unlockArr = [...getUnlocked()].sort((a,b)=>a-b);
   const meta = [greyArr.length ? `GREY:${greyArr.join(',')}` : '', unlockArr.length ? `UNLOCK:${unlockArr.join(',')}` : ''].filter(Boolean).join('|');
-  setCell(curRow, 0, cell(meta || '', sty({ color: C.bgPage, bg: C.bgPage })));
-  for (let c = 1; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgPage })));
-  curRow++;
+  ws.getRow(R).height = 4;
+  const metaCell = ws.getCell(R, 1);
+  metaCell.value = meta || '';
+  metaCell.font  = { name: FONT, size: 6, color: { argb: 'FFFAFAF8' } };
+  metaCell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAF8' } };
+  ws.mergeCells(R, 1, R, totalCols);
+  R++;
 
-  // ── LIGNE 3 : En-têtes jours ──────────────────────────────────────────────
+  // ── LIGNE 3 : En-têtes jours ─────────────────────────────────────────────
+  ws.getRow(R).height = 44;
   // Colonne label
-  setCell(curRow, 0, cell('Activité / Jour',
-    sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
+  setCell(R, 1, 'Activité / Jour', P.header, P.headerTxt, { bold: true, size: 9, h: 'left', wrap: false });
 
   for (let d = 1; d <= days; d++) {
-    const st  = dayStatus(d);
-    const dow = DAYS[new Date(year, month, d).getDay()].toUpperCase();
-    const fName = isFerie(year, month, d) ? getFerieName(year, month, d) : '';
-    const bg  = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.bgSurface2;
-    const col = (st==='we'||st==='ferie'||st==='grey') ? C.txtLight : C.txtMuted;
-    // On met le jour + nom du jour + nom du férié dans la cellule (multiligne)
-    const txt = fName ? `${d}\n${dow}\n${fName}` : `${d}\n${dow}`;
-    setCell(curRow, d, { v: txt, t: 's', s: { ...sty({ bg, bold: true, color: col, sz: 8, center: true, border: true, wrap: true }) } });
+    const [bg, tc] = dayCellStyle(d);
+    const dow   = DAYS[new Date(year, month, d).getDay()].toUpperCase();
+    const fname = isFerie(year, month, d) ? getFerieName(year, month, d) : '';
+    const label = fname ? `${d}\n${dow}\n${fname}` : `${d}\n${dow}`;
+    const cell  = ws.getCell(R, d + 1);
+    cell.value  = label;
+    cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(bg) } };
+    cell.font   = { name: FONT, bold: true, size: 8, color: { argb: hexToArgb(tc) } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = { top: {style:'thin',color:{argb:hexToArgb(P.border)}}, bottom:{style:'thin',color:{argb:hexToArgb(P.border)}}, left:{style:'thin',color:{argb:hexToArgb(P.border)}}, right:{style:'thin',color:{argb:hexToArgb(P.border)}} };
   }
-  // Colonne Total
-  setCell(curRow, lastCol, cell('Total', sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, center: true, border: true })));
-  curRow++;
+  setCell(R, totalCols, 'Total', P.header, P.headerTxt, { bold: true, size: 9 });
+  R++;
 
   // ── LIGNES ACTIVITÉS ─────────────────────────────────────────────────────
-  const rowBgAlt = ['FFFFFFFF', 'FFFAFAF8'];
+  const rowBgs = ['FFFFFF', 'FAFAF8'];
   activities.forEach((act, i) => {
-    const rowBg = rowBgAlt[i % 2];
-    setCell(curRow, 0, cell(act, sty({ bg: rowBg, bold: true, color: C.txtDark, sz: 10, left: true, border: true })));
+    ws.getRow(R).height = 18;
+    const rowBg = rowBgs[i % 2];
+    setCell(R, 1, act, rowBg, P.darkTxt, { bold: true, size: 10, h: 'left' });
     let tot = 0;
     for (let d = 1; d <= days; d++) {
+      const [dayBg] = dayCellStyle(d);
       const st = dayStatus(d);
       const v  = get(i, d);
-      const n  = v==='1'?1:v==='0.5'?0.5:null;
+      const n  = v === '1' ? 1 : v === '0.5' ? 0.5 : null;
       if (n) tot += n;
-      const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : rowBg;
-      let cellBg = bg, cellColor = C.txtMuted;
-      if (n === 1)   { cellBg = C.bgGreen; cellColor = C.txtGreen; }
-      if (n === 0.5) { cellBg = C.bgBlue;  cellColor = C.txtBlue;  }
-      const cval = n !== null ? { v: n, t: 'n', s: sty({ bg: cellBg, bold: !!n, color: cellColor, center: true, border: true }) }
-                              : emptyCell(sty({ bg, border: true, center: true }));
-      setCell(curRow, d, cval);
+      const isBlocked = st === 'we' || st === 'ferie' || st === 'grey';
+      let bg = isBlocked ? dayBg : rowBg;
+      let tc = P.mutedTxt;
+      if (n === 1)   { bg = P.green; tc = P.greenTxt; }
+      if (n === 0.5) { bg = P.blue;  tc = P.blueTxt;  }
+      setCell(R, d + 1, n, bg, tc, { bold: n !== null, size: 10 });
     }
-    const totStyle = sty({ bg: tot>0?C.bgGreen:rowBg, bold: true, color: tot>0?C.txtGreen:C.txtMuted, center: true, border: true });
-    setCell(curRow, lastCol, tot > 0 ? { v: tot, t: 'n', s: totStyle } : emptyCell(totStyle));
-    curRow++;
+    const totBg = tot > 0 ? P.green : rowBg;
+    const totTc = tot > 0 ? P.greenTxt : P.mutedTxt;
+    setCell(R, totalCols, tot > 0 ? tot : null, totBg, totTc, { bold: true, size: 10 });
+    R++;
   });
 
-  // ── LIGNE SÉPARATEUR ─────────────────────────────────────────────────────
-  for (let c = 0; c < totalCols; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgSurface2, border: true })));
-  curRow++;
+  // ── SÉPARATEUR ───────────────────────────────────────────────────────────
+  ws.getRow(R).height = 3;
+  fillRow(R, P.header);
+  R++;
 
-  // ── LIGNES CONGÉS + RTT ──────────────────────────────────────────────────
-  const specialRows = [
-    { key:'conge', label:'Congés payés', valBg: C.bgGreen, valColor: C.txtGreen },
-    { key:'rtt',   label:'RTT',          valBg: C.bgBlue,  valColor: C.txtBlue  },
+  // ── CONGÉS + RTT ─────────────────────────────────────────────────────────
+  const specialDef = [
+    { key: 'conge', label: 'Congés payés', valBg: P.green, valTc: P.greenTxt, lblTc: P.greenTxt },
+    { key: 'rtt',   label: 'RTT',          valBg: P.blue,  valTc: P.blueTxt,  lblTc: P.blueTxt  },
   ];
-  specialRows.forEach(({ key, label, valBg, valColor }) => {
-    setCell(curRow, 0, cell(label, sty({ bg: C.white, bold: true, color: valColor, sz: 10, left: true, border: true })));
+  specialDef.forEach(({ key, label, valBg, valTc, lblTc }) => {
+    ws.getRow(R).height = 18;
+    setCell(R, 1, label, P.white, lblTc, { bold: true, size: 10, h: 'left' });
     let tot = 0;
     for (let d = 1; d <= days; d++) {
+      const [dayBg] = dayCellStyle(d);
       const st = dayStatus(d);
       const v  = get(key, d);
-      const n  = v==='1'?1:v==='0.5'?0.5:null;
+      const n  = v === '1' ? 1 : v === '0.5' ? 0.5 : null;
       if (n) tot += n;
-      const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.white;
-      const cval = n !== null ? { v: n, t: 'n', s: sty({ bg: valBg, bold: true, color: valColor, center: true, border: true }) }
-                              : emptyCell(sty({ bg, border: true, center: true }));
-      setCell(curRow, d, cval);
+      const isBlocked = st === 'we' || st === 'ferie' || st === 'grey';
+      const bg = n !== null ? valBg : isBlocked ? dayBg : P.white;
+      const tc = n !== null ? valTc : P.lightTxt;
+      setCell(R, d + 1, n, bg, tc, { bold: n !== null, size: 10 });
     }
-    const totStyle = sty({ bg: tot>0?valBg:C.white, bold: true, color: tot>0?valColor:C.txtMuted, center: true, border: true });
-    setCell(curRow, lastCol, tot > 0 ? { v: tot, t: 'n', s: totStyle } : emptyCell(totStyle));
-    curRow++;
+    const totBg = tot > 0 ? valBg : P.white;
+    setCell(R, totalCols, tot > 0 ? tot : null, totBg, tot > 0 ? valTc : P.mutedTxt, { bold: true, size: 10 });
+    R++;
   });
 
-  // ── LIGNE TOTAL / JOUR ───────────────────────────────────────────────────
-  setCell(curRow, 0, cell('Total / jour', sty({ bg: C.bgTotRow, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
+  // ── TOTAL / JOUR ──────────────────────────────────────────────────────────
+  ws.getRow(R).height = 18;
+  setCell(R, 1, 'Total / jour', P.totRow, P.mutedTxt, { bold: true, size: 9, h: 'left' });
   let grand = 0;
   for (let d = 1; d <= days; d++) {
+    const [dayBg] = dayCellStyle(d);
     const st = dayStatus(d);
     let s = 0;
-    activities.forEach((_,i) => { const v=get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
-    ['conge','rtt'].forEach(r => { const v=get(r,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    activities.forEach((_, i) => { const v = get(i,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
+    ['conge','rtt'].forEach(r2 => { const v = get(r2,d); if(v==='1') s+=1; else if(v==='0.5') s+=0.5; });
     grand += s;
-    const bg = st==='we' ? C.bgWE : st==='ferie' ? C.bgFerie : st==='grey' ? C.bgGrey : st==='ferie-unlocked' ? C.bgFerieUnlk : C.bgTotRow;
-    const overColor = s > 1 ? C.txtRed : s === 1 ? C.txtGreen : C.txtLight;
-    const overBg    = s > 1 ? C.bgRed  : s === 1 ? C.bgGreen  : bg;
-    setCell(curRow, d, s > 0
-      ? { v: s, t: 'n', s: sty({ bg: overBg, bold: true, color: overColor, center: true, border: true }) }
-      : emptyCell(sty({ bg, border: true, center: true })));
+    const isBlocked = st === 'we' || st === 'ferie' || st === 'grey';
+    const bg = isBlocked ? dayBg : (s > 1 ? P.red : s === 1 ? P.green : P.totRow);
+    const tc = isBlocked ? P.lightTxt : (s > 1 ? P.redTxt : s === 1 ? P.greenTxt : P.lightTxt);
+    setCell(R, d + 1, s > 0 ? s : null, bg, tc, { bold: s > 0, size: 10 });
   }
-  const totTotStyle = sty({ bg: C.bgTotRow, bold: true, color: C.txtDark, center: true, border: true });
-  setCell(curRow, lastCol, grand > 0 ? { v: grand, t: 'n', s: totTotStyle } : emptyCell(totTotStyle));
-  curRow++;
+  setCell(R, totalCols, grand > 0 ? grand : null, P.totRow, P.darkTxt, { bold: true, size: 10 });
+  R++;
 
-  // ── ESPACE ───────────────────────────────────────────────────────────────
-  curRow += 2;
+  // ── ESPACE ────────────────────────────────────────────────────────────────
+  ws.getRow(R).height = 8; fillRow(R, P.white, 1, totalCols); R++;
+  ws.getRow(R).height = 8; fillRow(R, P.white, 1, totalCols); R++;
 
   // ── BLOC INDICATEURS ─────────────────────────────────────────────────────
-  // Titre bloc
-  setCell(curRow, 0, cell('Indicateurs du mois', sty({ bg: C.bgTitleRow, bold: true, color: C.txtWhite, sz: 11, left: true })));
-  for (let c = 1; c <= 5; c++) setCell(curRow, c, emptyCell(sty({ bg: C.bgTitleRow })));
-  ws['!merges'].push({ s: {r: curRow, c: 0}, e: {r: curRow, c: 5} });
-  curRow++;
+  ws.getRow(R).height = 20;
+  fillRow(R, P.title, 1, 6);
+  const indTitle = ws.getCell(R, 1);
+  indTitle.value = 'Indicateurs du mois';
+  indTitle.font  = { name: FONT, bold: true, size: 11, color: { argb: hexToArgb(P.titleTxt) } };
+  indTitle.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(P.title) } };
+  indTitle.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.mergeCells(R, 1, R, 6); R++;
 
-  const diffVal  = totalImpute - ouvres;
-  const diffColor = diffVal > 0.05 ? C.txtRed : diffVal < -0.05 ? C.txtAmber : C.txtGreen;
-  const diffBg    = diffVal > 0.05 ? C.bgRed  : diffVal < -0.05 ? C.bgAmber  : C.bgGreen;
+  const diffBg = diff > 0.05 ? P.red : diff < -0.05 ? P.amber : P.green;
+  const diffTc = diff > 0.05 ? P.redTxt : diff < -0.05 ? P.amberTxt : P.greenTxt;
 
   const indicators = [
-    { label: 'Société',          value: societe,      isNum: false, color: C.txtDark,  bg: C.white    },
-    { label: 'Collaborateur',    value: name,         isNum: false, color: C.txtDark,  bg: C.white    },
-    { label: 'Période',          value: `${MONTHS[month]} ${year}`, isNum: false, color: C.txtMuted, bg: C.white },
-    { label: 'Jours ouvrés',     value: ouvres,       isNum: true,  color: C.txtDark,  bg: C.bgSurface2 },
-    { label: 'Jours fériés',     value: nbFeries,     isNum: true,  color: C.txtMuted, bg: C.bgSurface2 },
-    { label: 'Jours travaillés', value: worked,       isNum: true,  color: C.txtGreen, bg: C.bgGreen  },
-    { label: 'Congés payés',     value: conge,        isNum: true,  color: C.txtGreen, bg: C.bgGreen  },
-    { label: 'RTT',              value: rtt,          isNum: true,  color: C.txtBlue,  bg: C.bgBlue   },
-    { label: 'Total imputé',     value: totalImpute,  isNum: true,  color: diffColor,  bg: diffBg     },
+    { label: 'Société',          value: societe,      isNum: false, bg: P.white,  tc: P.darkTxt  },
+    { label: 'Collaborateur',    value: name,         isNum: false, bg: P.white,  tc: P.darkTxt  },
+    { label: 'Période',          value: `${MONTHS[month]} ${year}`, isNum: false, bg: P.white, tc: P.mutedTxt },
+    { label: 'Jours ouvrés',     value: ouvres,       isNum: true,  bg: P.header, tc: P.darkTxt  },
+    { label: 'Jours fériés',     value: nbFeries,     isNum: true,  bg: P.header, tc: P.mutedTxt },
+    { label: 'Jours travaillés', value: worked,       isNum: true,  bg: P.green,  tc: P.greenTxt },
+    { label: 'Congés payés',     value: conge,        isNum: true,  bg: P.green,  tc: P.greenTxt },
+    { label: 'RTT',              value: rtt,          isNum: true,  bg: P.blue,   tc: P.blueTxt  },
+    { label: 'Total imputé',     value: totalImpute,  isNum: true,  bg: diffBg,   tc: diffTc     },
   ];
 
-  indicators.forEach(({ label, value, isNum, color, bg }) => {
-    setCell(curRow, 0, cell(label, sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true, border: true })));
-    const valCell = isNum
-      ? { v: value, t: 'n', s: sty({ bg, bold: true, color, sz: 14, center: true, border: true }) }
-      : cell(value, sty({ bg, bold: false, color, sz: 11, left: true, border: true }));
-    setCell(curRow, 1, valCell);
-    for (let c = 2; c <= 5; c++) setCell(curRow, c, emptyCell(sty({ bg: C.white })));
-    curRow++;
+  indicators.forEach(({ label, value, isNum, bg, tc }) => {
+    ws.getRow(R).height = 20;
+    setCell(R, 1, label, P.header, P.mutedTxt, { bold: true, size: 9, h: 'left' });
+    setCell(R, 2, value, bg, tc, { bold: isNum, size: isNum ? 14 : 11, h: isNum ? 'center' : 'left' });
+    for (let c = 3; c <= 6; c++) setCell(R, c, null, P.white, P.mutedTxt, { border: false });
+    R++;
   });
 
-  // ── LÉGENDE couleurs ─────────────────────────────────────────────────────
-  curRow++;
-  const legendItems = [
-    { label: 'Week-end',            bg: C.bgWE      },
-    { label: 'Jour férié',          bg: C.bgFerie   },
-    { label: 'Férié travaillé',     bg: C.bgFerieUnlk },
-    { label: 'Jour grisé',          bg: C.bgGrey    },
-    { label: 'Journée (1)',         bg: C.bgGreen   },
-    { label: 'Demi-journée (0.5)',  bg: C.bgBlue    },
+  // ── LÉGENDE ───────────────────────────────────────────────────────────────
+  ws.getRow(R).height = 8; fillRow(R, P.white, 1, 6); R++;
+  const legTitle = ws.getCell(R, 1);
+  legTitle.value = 'Légende';
+  legTitle.font  = { name: FONT, bold: true, size: 9, color: { argb: hexToArgb(P.mutedTxt) } };
+  legTitle.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(P.header) } };
+  legTitle.alignment = { horizontal: 'left', vertical: 'middle' };
+  ws.mergeCells(R, 1, R, 6); R++;
+
+  const legendDefs = [
+    { label: 'Week-end',           bg: P.we     },
+    { label: 'Jour férié',         bg: P.ferie  },
+    { label: 'Férié travaillé',    bg: P.unlock },
+    { label: 'Jour grisé',         bg: P.grey   },
+    { label: 'Journée (1)',        bg: P.green  },
+    { label: 'Demi-journée (0.5)', bg: P.blue   },
   ];
-  setCell(curRow, 0, cell('Légende', sty({ bg: C.bgSurface2, bold: true, color: C.txtMuted, sz: 9, left: true })));
-  curRow++;
-  legendItems.forEach(({ label, bg }) => {
-    setCell(curRow, 0, emptyCell(sty({ bg, border: true })));
-    setCell(curRow, 1, cell(label, sty({ bg: C.white, color: C.txtMuted, sz: 9, left: true })));
-    curRow++;
+  legendDefs.forEach(({ label, bg }) => {
+    ws.getRow(R).height = 16;
+    setCell(R, 1, null, bg, P.mutedTxt, {});
+    setCell(R, 2, label, P.white, P.mutedTxt, { size: 9, h: 'left', border: false });
+    for (let c = 3; c <= 6; c++) setCell(R, c, null, P.white, P.mutedTxt, { border: false });
+    R++;
   });
 
-  // ── Dimensions colonnes / lignes ─────────────────────────────────────────
-  ws['!cols'] = [
-    { wch: 26 },
-    ...Array(days).fill({ wch: 5 }),
-    { wch: 7 },
-  ];
-  // Hauteur ligne en-tête jours (pour afficher le nom du férié)
-  ws['!rows'] = ws['!rows'] || [];
-  ws['!rows'][2] = { hpt: 42 }; // ligne 3 (index 2) = en-tête jours
-
-  ws['!ref'] = XLSX.utils.encode_range({ s: {r:0,c:0}, e: {r:curRow, c:Math.max(lastCol, 5)} });
-
-  XLSX.utils.book_append_sheet(wb, ws, `${MONTHS[month]} ${year}`);
-  XLSX.writeFile(wb, `CRA_${societe.replace(/\s+/g,'_')}_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`, { cellStyles: true, bookSST: false });
+  // ── Téléchargement ────────────────────────────────────────────────────────
+  const filename = `CRA_${societe.replace(/\s+/g,'_')}_${name.replace(/\s+/g,'_')}_${MONTHS[month]}_${year}.xlsx`;
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, filename);
   toast('Export réussi !');
 }
 
